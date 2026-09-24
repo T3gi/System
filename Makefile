@@ -5,7 +5,7 @@ build:
 		make -C firmware all
 
 flash:
-	st-flash write firmware/build/$(TARGET).bin 0x08000000
+	st-flash write firmware/build/firmware.bin 0x08000000
 	
 monitor:
-	picocom -b 115200 /dev/ttyACM0
+	picocom -b 115200 --imap lfcrlf /dev/ttyACM0
