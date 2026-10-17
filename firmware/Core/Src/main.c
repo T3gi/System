@@ -31,7 +31,17 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define MPU6050_I2C_ADDR      (0x68 << 1)  
+#define LSM303D_ADDR   (0x1D << 1)
+#define L3GD20_ADDR    (0x6B << 1)
+#define BMP180_ADDR    (0x77 << 1)
 
+#define MPU6050_REG_WHO_AM_I  0x75         
+#define MPU6050_REG_PWR_MGMT_1 0x6B        
+
+#define W25Q_CMD_JEDEC_ID     0x9F
+#define W25Q_CS_PORT          GPIOB
+#define W25Q_CS_PIN           GPIO_PIN_12
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -70,6 +80,98 @@ int _write(int file, char *ptr, int len) {
     HAL_UART_Transmit(&huart2, (uint8_t*)ptr, len, HAL_MAX_DELAY);
     return len;
 }
+
+void I2C_Scan(void) {
+    printf("Сканування шини I2C1...\r\n");
+    uint8_t count = 0;
+    for (uint16_t addr = 1; addr < 128; addr++) {
+        if (HAL_I2C_IsDeviceReady(&hi2c1, (addr << 1), 1, 10) == HAL_OK) {
+            printf(" Знайдено пристрій за адресою: 0x%02X\r\n", addr);
+            count++;
+        }
+    }
+    printf("Сканування завершено. Знайдено пристроїв: %d\r\n", count);
+}
+
+void W25Q_Select(void) {
+    HAL_GPIO_WritePin(W25Q_CS_PORT, W25Q_CS_PIN, GPIO_PIN_RESET);
+}
+
+void W25Q_Unselect(void) {
+    HAL_GPIO_WritePin(W25Q_CS_PORT, W25Q_CS_PIN, GPIO_PIN_SET);
+}
+
+void W25Q64_ReadID(void) {
+    uint8_t tx_buf[4] = {0x9F, 0x00, 0x00, 0x00};
+    uint8_t rx_buf[4] = {0};
+
+    W25Q_Select();
+    HAL_SPI_TransmitReceive(&hspi2, tx_buf, rx_buf, 4, 100);
+    W25Q_Unselect();
+
+    uint8_t id[3] = {rx_buf[1], rx_buf[2], rx_buf[3]};
+
+    printf("[W25Q64] JEDEC ID: 0x%02X 0x%02X 0x%02X ", id[0], id[1], id[2]);
+    if (id[0] == 0xEF && id[1] == 0x40 && id[2] == 0x17) {
+        printf("(OK - W25Q64 знайдено)\r\n");
+    } else {
+        printf("(Помилка або невідомий чіп)\r\n");
+    }
+}
+
+void MPU6050_Init(void) {
+    uint8_t chip_id = 0;
+    
+    HAL_StatusTypeDef status = HAL_I2C_Mem_Read(&hi2c1, MPU6050_I2C_ADDR, 
+                                                MPU6050_REG_WHO_AM_I, 
+                                                I2C_MEMADD_SIZE_8BIT, 
+                                                &chip_id, 1, 100);
+    if (status == HAL_OK) {
+        printf("[MPU6050] WHO_AM_I: 0x%02X ", chip_id);
+        if (chip_id == 0x68) {
+            printf("(OK)\r\n");
+            
+            /* Вихід з режиму Sleep (запис 0 у PWR_MGMT_1) */
+            uint8_t pwr_mgmt = 0x00;
+            HAL_I2C_Mem_Write(&hi2c1, MPU6050_I2C_ADDR, MPU6050_REG_PWR_MGMT_1, 
+                              I2C_MEMADD_SIZE_8BIT, &pwr_mgmt, 1, 100);
+            printf("[MPU6050] Прокинуто, активовано робочий режим.\r\n");
+        } else {
+            printf("(Невірний ID, очікується 0x68)\r\n");
+        }
+    } else {
+        printf("[MPU6050] Помилка зчитування по I2C!\r\n");
+    }
+}
+
+void Servo_Init(void) {
+    __HAL_TIM_SET_PRESCALER(&htim3, 84 - 1);
+    __HAL_TIM_SET_AUTORELOAD(&htim3, 20000 - 1);
+
+    HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+
+    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 1500);
+}
+
+void Servo_SetAngle(uint8_t angle) {
+    if (angle > 180) angle = 180;
+    /* 0° = ~1000 мкс (1.0 мс), 180° = ~2000 мкс (2.0 мс) */
+    uint32_t pulse = 1000 + ((uint32_t)angle * 1000) / 180;
+    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, pulse);
+}
+
+void GY89_ReadIDs(void) {
+    uint8_t id = 0;
+
+    HAL_I2C_Mem_Read(&hi2c1, LSM303D_ADDR, 0x0F, I2C_MEMADD_SIZE_8BIT, &id, 1, 100);
+    printf("[LSM303D] WHO_AM_I: 0x%02X\r\n", id);
+
+    HAL_I2C_Mem_Read(&hi2c1, L3GD20_ADDR, 0x0F, I2C_MEMADD_SIZE_8BIT, &id, 1, 100);
+    printf("[L3GD20]  WHO_AM_I: 0x%02X\r\n", id);
+
+    HAL_I2C_Mem_Read(&hi2c1, BMP180_ADDR, 0xD0, I2C_MEMADD_SIZE_8BIT, &id, 1, 100);
+    printf("[BMP180]  CHIP_ID:  0x%02X\r\n", id);
+}
 /* USER CODE END 0 */
 
 /**
@@ -107,6 +209,24 @@ int main(void)
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
   printf("hello from STM32\r\n");
+  printf("\r\n=== Запуск перевірки компонентів ===\r\n");
+
+  I2C_Scan();
+  Servo_Init();
+  Servo_SetAngle(0);
+  HAL_Delay(1000);
+  Servo_SetAngle(90);
+  HAL_Delay(1000);
+  Servo_SetAngle(180);
+  HAL_Delay(1000);
+
+  W25Q64_ReadID();
+
+  MPU6050_Init();
+
+  GY89_ReadIDs();
+
+  printf("===================================\r\n");
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -119,7 +239,6 @@ int main(void)
     HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
     HAL_Delay(1000);
     printf("tick %lu\r\n", HAL_GetTick() / 1000UL);
-    HAL_I2C_IsDeviceReady(&hi2c1, (0x77U << 1), 3, 1000);
   }
   /* USER CODE END 3 */
 }
