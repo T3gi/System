@@ -1,26 +1,26 @@
 [D0]
-name=D0
+name=MISO
 enabled=true
 color=4279638298
 conversion_type=0
 conv_options=0
 
 [D1]
-name=D1
+name=CS
 enabled=true
 color=4287582722
 conversion_type=0
 conv_options=0
 
 [D2]
-name=D2
+name=MOSI
 enabled=true
 color=4291559424
 conversion_type=0
 conv_options=0
 
 [D3]
-name=D3
+name=CLK
 enabled=true
 color=4294277376
 conversion_type=0
@@ -61,11 +61,11 @@ views=1
 meta_objs=0
 
 [view0]
-scale=0.057781201848998424
-v_offset=-223
-splitter_state=@ByteArray(\0\0\0\xff\0\0\0\x1\0\0\0\x2\0\0\0?\0\0\x5#\x1\0\0\0\x1\x1\0\0\0\x1\0)
+scale=0.005062499999999991
+v_offset=-222
+splitter_state=@ByteArray(\0\0\0\xff\0\0\0\x1\0\0\0\x2\0\0\0L\0\0\x5\x16\x1\0\0\0\x1\x1\0\0\0\x1\0)
 segment_display_mode=1
-offset=22 serialization::archive 14 0 0 0 0 2 67607026 77587097 14006788 71576772 5057216 0 0 0 6
+offset=22 serialization::archive 14 0 0 0 0 4 78936362 62353034 28873374 96408607 3309542 0 0 0 6
 zero_offset=22 serialization::archive 14 0 0 0 0 0 0 0 0 0 0 0 0 0 6
 D0\trace_height=26
 D1\trace_height=26

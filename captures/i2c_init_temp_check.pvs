@@ -1,12 +1,12 @@
 [D0]
-name=D0
+name=SCL
 enabled=true
 color=4279638298
 conversion_type=0
 conv_options=0
 
 [D1]
-name=D1
+name=SDA
 enabled=true
 color=4287582722
 conversion_type=0
@@ -61,11 +61,11 @@ views=1
 meta_objs=0
 
 [view0]
-scale=0.017085937500000002
+scale=0.016250963020030817
 v_offset=-222
-splitter_state=@ByteArray(\0\0\0\xff\0\0\0\x1\0\0\0\x2\0\0\0?\0\0\x5#\x1\0\0\0\x1\x1\0\0\0\x1\0)
+splitter_state=@ByteArray(\0\0\0\xff\0\0\0\x1\0\0\0\x2\0\0\0\x46\0\0\x5\x1c\x1\0\0\0\x1\x1\0\0\0\x1\0)
 segment_display_mode=1
-offset=22 serialization::archive 14 0 0 0 0 13 40770312 50000021 66659213 15417620 776251 0 1 0 6
+offset=22 serialization::archive 14 0 0 0 0 0 0 0 0 0 0 0 0 0 6
 zero_offset=22 serialization::archive 14 0 0 0 0 0 0 0 0 0 0 0 0 0 6
 D0\trace_height=26
 D1\trace_height=26
