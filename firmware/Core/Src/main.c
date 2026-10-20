@@ -1367,26 +1367,6 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-    HAL_Delay(1000);
-    printf("tick %lu\r\n", HAL_GetTick() / 1000UL);
-    float temp = 24.68f;
-
-    if (MPU6050_ReadTemperature(&temp) == HAL_OK) {
-        int32_t int_part = (int32_t)temp;
-        // Отримуємо 2 знаки після коми (множимо на 100)
-        int32_t frac_part = (int32_t)((temp - (float)int_part) * 100.0f);
-
-        // Враховуємо випадок від'ємних температур
-        if (frac_part < 0) {
-            frac_part = -frac_part;
-        }
-
-        printf("[MPU6050] Температура: %ld.%02ld °C\r\n", (long)int_part, (long)frac_part);
-    } else {
-        printf("[MPU6050] Помилка отримання температури!\r\n");
-    }
-
     
     int c = uart_getchar_nb();
     if (c >= 0) {
@@ -1437,6 +1417,22 @@ int main(void)
         printf("TICK t=%lu rx=%lu ore=%lu cmds=%lu\r\n",
                 (unsigned long)last_blink, (unsigned long)s_rx_bytes,
                 (unsigned long)s_rx_overruns, (unsigned long)s_cmd_count);
+        float temp = 24.68f;
+
+        if (MPU6050_ReadTemperature(&temp) == HAL_OK) {
+            int32_t int_part = (int32_t)temp;
+            // Отримуємо 2 знаки після коми (множимо на 100)
+            int32_t frac_part = (int32_t)((temp - (float)int_part) * 100.0f);
+
+            // Враховуємо випадок від'ємних температур
+            if (frac_part < 0) {
+                frac_part = -frac_part;
+            }
+
+            printf("[MPU6050] Температура: %ld.%02ld °C\r\n", (long)int_part, (long)frac_part);
+        } else {
+            printf("[MPU6050] Помилка отримання температури!\r\n");
+    }
         
     }
   }
