@@ -37,8 +37,12 @@ BUILD_DIR = build
 # C sources
 C_SOURCES =  \
 Core/Src/main.c \
-App/Src/w25q64.c \
-App/Src/sccb.c \
+Devices/Src/w25q64.c \
+Devices/Src/mpu6050.c \
+Devices/Src/gy89.c \
+Devices/Src/i2c_scan.c \
+Devices/Src/servo.c \
+Devices/Src/ov7670.c \
 Core/Src/stm32f4xx_it.c \
 Core/Src/stm32f4xx_hal_msp.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c.c \
@@ -65,7 +69,10 @@ Core/Src/sysmem.c \
 Core/Src/syscalls.c \
 Platform/Src/platform_i2c.c \
 Platform/Src/platform_spi.c \
-Platform/Src/platform_pwm.c
+Platform/Src/platform_pwm.c \
+Platform/Src/platform_time.c \
+Platform/Src/platform_sccb.c \
+Platform/Src/platform_camera.c
 
 # ASM sources
 ASM_SOURCES =  \
@@ -214,8 +221,8 @@ clean:
 #######################################
 check-arch:
 	@echo "Checking architecture dependencies..."
-	@if grep -rn "stm32f4xx_hal" App/ ; then \
-		echo "ERROR: Architecture violation! App/ includes HAL headers."; \
+	@if grep -rn "stm32f4xx_hal" App/ Devices/ ; then \
+		echo "ERROR: Architecture violation! App/ or Devices/ includes HAL headers."; \
 		exit 1; \
 	else \
 		echo "SUCCESS: Architecture check passed."; \

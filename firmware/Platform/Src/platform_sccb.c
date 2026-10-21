@@ -1,9 +1,9 @@
 /**
- * @file  sccb.c
+ * @file  platform_sccb.c
  * @brief OV7670 SCCB master: stock HAL I2C back-ends + bit-bang reference.
- *        See sccb.h for the SCCB-vs-I2C notes and back-end description.
+ *        See platform_sccb.h for the SCCB-vs-I2C notes and back-end description.
  */
-#include "sccb.h"
+#include "platform_sccb.h"
 #include "stm32f4xx_hal.h"
 
 #define SCL_PIN        GPIO_PIN_8
@@ -213,6 +213,17 @@ static int bb_read(uint8_t a7, uint8_t reg)
 /* ======================================================================= */
 /* Public API                                                               */
 /* ======================================================================= */
+void sccb_pins_reinit(void)
+{
+    __HAL_RCC_I2C1_CLK_DISABLE();               /* free the peripheral */
+    /* GPIO open-drain з internal pull-up */
+    GPIO_InitTypeDef g = { .Mode = GPIO_MODE_OUTPUT_OD,
+                           .Pull = GPIO_PULLUP,
+                           .Speed = GPIO_SPEED_FREQ_HIGH,
+                           .Pin  = SCL_PIN | SDA_PIN };
+    HAL_GPIO_Init(GPIOB, &g);
+}
+
 int sccb_init(sccb_backend_t b)
 {
     if (b >= SCCB_BACKEND_COUNT) return -2;

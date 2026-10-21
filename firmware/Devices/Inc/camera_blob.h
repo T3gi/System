@@ -13,6 +13,9 @@
 #ifndef INC_CWSYS_CAMERA_BLOB_H_
 #define INC_CWSYS_CAMERA_BLOB_H_
 
+#include <stdint.h>
+#include "ov7670.h"
+
 #define SCCB_ADDR 0x42
 
 /* Registers */
@@ -389,16 +392,9 @@ static const uint8_t ov7670_mode_qcif_linux[][2] = {
  *
  * Note hstop < hstart for several modes: the window wraps around the
  * 784-pixel total line length.  Width = (hstop - hstart) mod 784.
+ *
+ * ov7670_mode_t itself is declared in ov7670.h.
  * ========================================================================== */
-typedef struct {
-    const char    *name;
-    const uint8_t (*regs)[2];
-    uint16_t       nregs;      /* including END marker */
-    uint16_t       width;      /* nominal output width  (pixels) */
-    uint16_t       height;     /* nominal output height (lines)  */
-    uint16_t       hstart, hstop, vstart, vstop;
-} ov7670_mode_t;
-
 #define OV_MODE_ENTRY(nm, arr, w, h, hs, he, vs, ve) \
     { nm, arr, (uint16_t)(sizeof(arr)/2), w, h, hs, he, vs, ve }
 

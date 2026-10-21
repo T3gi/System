@@ -25,8 +25,8 @@
  *                   Control case: shows what breaks when SCCB is treated as I2C.
  *   SCCB_BITBANG  — GPIO open-drain reference; ignores the X bit but records it.
  */
-#ifndef SCCB_H
-#define SCCB_H
+#ifndef PLATFORM_SCCB_H
+#define PLATFORM_SCCB_H
 
 #include <stdint.h>
 
@@ -46,6 +46,9 @@ typedef struct {
     uint32_t last_err;   /* last HAL ErrorCode (HAL_I2C_ERROR_*)              */
 } sccb_stats_t;
 
+/** Stop I2C1 and park PB8/PB9 as open-drain GPIO with pull-ups. */
+void sccb_pins_reinit(void);
+
 /** Switch pins/peripheral to a back-end.  0 = OK, <0 = error. */
 int  sccb_init(sccb_backend_t b);
 sccb_backend_t sccb_backend(void);
@@ -64,4 +67,4 @@ int  sccb_write_reg(uint8_t slave7, uint8_t reg, uint8_t val);
 void sccb_stats_reset(void);
 const sccb_stats_t *sccb_stats(void);
 
-#endif /* SCCB_H */
+#endif /* PLATFORM_SCCB_H */

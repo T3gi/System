@@ -1,17 +1,19 @@
 /**
  ******************************************************************************
  * @file    w25q64.c
- * @brief   W25Q64 SPI NOR flash driver on SPI2 (see w25q64.h for wiring).
+ * @brief   W25Q64 SPI NOR flash driver (see w25q64.h for wiring).
  *
- * SPI2 is configured with direct register writes rather than HAL_SPI: this HAL
- * subset does not vendor stm32f4xx_hal_spi.c, and per-byte HAL calls would add
- * microseconds of overhead each — which matters when a 256-byte page has to be
- * pushed inside a horizontal blanking gap during frame capture.  The rest of
- * this project already talks to hardware this way (bit-banged SCCB, polled
- * GPIO capture).
+ * Bytes go through Platform_SPI_Xfer(), the register path in platform_spi.c,
+ * rather than HAL_SPI: per-byte HAL calls would add microseconds of overhead
+ * each — which matters when a 256-byte page has to be pushed inside a
+ * horizontal blanking gap during frame capture.
  ******************************************************************************
  */
 #include "w25q64.h"
+#include "platform_spi.h"
+#include "platform_time.h"
+#include <stdbool.h>
+#include <stdio.h>
 
 /* --- Instruction set ----------------------------------------------------- */
 #define CMD_WRITE_ENABLE   0x06u
@@ -25,34 +27,10 @@
 #define CMD_JEDEC_ID       0x9Fu
 #define CMD_RELEASE_PD     0xABu
 
-/* CS# on PB12, driven by hand: hardware NSS in master mode deasserts between
- * frames, which would abort a multi-byte flash transaction. */
-#define W25_CS_PORT        GPIOB
-#define W25_CS_PIN         GPIO_PIN_12
+static inline void cs_low(void)  { Platform_SPI_SetCS(true); }
+static inline void cs_high(void) { Platform_SPI_SetCS(false); }
 
-static inline void cs_low(void)
-{
-    W25_CS_PORT->BSRR = (uint32_t)W25_CS_PIN << 16;   /* reset */
-}
-
-static inline void cs_high(void)
-{
-    W25_CS_PORT->BSRR = (uint32_t)W25_CS_PIN;          /* set */
-}
-
-/* Bounded so a missing or mis-wired chip reports an error instead of hanging
- * the firmware — the same lesson the camera polling loops taught. */
-#define SPI_SPIN_GUARD  100000u
-
-static uint8_t spi_xfer(uint8_t v)
-{
-    uint32_t guard = SPI_SPIN_GUARD;
-    while ((SPI2->SR & SPI_SR_TXE) == 0) { if (--guard == 0) return 0xFF; }
-    *(volatile uint8_t *)&SPI2->DR = v;
-    guard = SPI_SPIN_GUARD;
-    while ((SPI2->SR & SPI_SR_RXNE) == 0) { if (--guard == 0) return 0xFF; }
-    return *(volatile uint8_t *)&SPI2->DR;
-}
+static inline uint8_t spi_xfer(uint8_t v) { return Platform_SPI_Xfer(v); }
 
 static void spi_write(const uint8_t *p, uint32_t n)
 {
@@ -76,58 +54,38 @@ static void cmd_addr(uint8_t cmd, uint32_t addr)
 
 /* --- Init ---------------------------------------------------------------- */
 
-/**
- * @brief Compose CR1 for master mode 0, 8-bit, MSB first.
- *
- * SSM|SSI are mandatory: with software slave management the master must drive
- * its internal NSS high, otherwise a low NSS raises MODF and the peripheral
- * silently drops out of master mode.
- */
-static uint32_t spi_cr1(uint32_t br)
-{
-    return SPI_CR1_MSTR | SPI_CR1_SSM | SPI_CR1_SSI
-           | ((br & 7u) << SPI_CR1_BR_Pos) | SPI_CR1_SPE;
+void W25Q64_ReadID(void) {
+    uint8_t tx_buf[4] = {CMD_JEDEC_ID, 0x00, 0x00, 0x00};
+    uint8_t rx_buf[4] = {0};
+
+    cs_low();
+    Platform_SPI_TransmitReceive(tx_buf, rx_buf, 4);
+    cs_high();
+
+    uint8_t id[3] = {rx_buf[1], rx_buf[2], rx_buf[3]};
+
+    printf("[W25Q64] JEDEC ID: 0x%02X 0x%02X 0x%02X ", id[0], id[1], id[2]);
+    if (id[0] == 0xEF && id[1] == 0x40 && id[2] == 0x17) {
+        printf("(OK - W25Q64 знайдено)\r\n");
+    } else {
+        printf("(Помилка або невідомий чіп)\r\n");
+    }
 }
 
 void w25_set_speed(uint32_t br)
 {
-    SPI2->CR1 &= ~SPI_CR1_SPE;
-    SPI2->CR1 = spi_cr1(br);
+    Platform_SPI_SetSpeed(br);
 }
 
 int w25_init(uint32_t br)
 {
-    __HAL_RCC_GPIOB_CLK_ENABLE();
-    __HAL_RCC_SPI2_CLK_ENABLE();
-
-    /* CS# first, and already HIGH, so the chip never sees a partial frame
-     * while the SCK/MOSI pins are still being switched to their AF. */
-    cs_high();
-    GPIO_InitTypeDef g = {0};
-    g.Pin   = W25_CS_PIN;
-    g.Mode  = GPIO_MODE_OUTPUT_PP;
-    g.Pull  = GPIO_PULLUP;
-    g.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-    HAL_GPIO_Init(W25_CS_PORT, &g);
-    cs_high();
-
-    g.Pin       = GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15;
-    g.Mode      = GPIO_MODE_AF_PP;
-    g.Pull      = GPIO_NOPULL;
-    g.Speed     = GPIO_SPEED_FREQ_VERY_HIGH;
-    g.Alternate = GPIO_AF5_SPI2;
-    HAL_GPIO_Init(GPIOB, &g);
-
-    /* Mode 0 (CPOL=0, CPHA=0) — W25Q64 supports modes 0 and 3. */
-    SPI2->CR1 = 0;
-    SPI2->CR2 = 0;
-    SPI2->CR1 = spi_cr1(br);
+    Platform_SPI_RegInit(br);
 
     /* A chip left in power-down by a previous run answers 0xFF to everything. */
     cs_low();
     (void)spi_xfer(CMD_RELEASE_PD);
     cs_high();
-    HAL_Delay(1);
+    Platform_DelayMs(1);
 
     uint8_t mfg = 0, type = 0, cap = 0;
     if (w25_read_id(&mfg, &type, &cap) != 0) return -2;
@@ -164,10 +122,10 @@ uint8_t w25_read_status(void)
 
 int w25_wait_busy(uint32_t timeout_ms)
 {
-    uint32_t t0 = HAL_GetTick();
+    uint32_t t0 = Platform_GetTick();
     for (;;) {
         if ((w25_read_status() & W25_SR1_BUSY) == 0) return 0;
-        if (HAL_GetTick() - t0 > timeout_ms) return -1;
+        if (Platform_GetTick() - t0 > timeout_ms) return -1;
     }
 }
 
