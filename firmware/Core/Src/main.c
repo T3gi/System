@@ -20,9 +20,15 @@
 #include "main.h"
 #include <string.h>
 #include <stdlib.h>
-#include "camera_blob.h"    /* register defines, common init, mode table */
+#include "camera_blob.h"    /* register defines (REG_BRIGHT for SCCBTEST) */
+#include "ov7670.h"
 #include "w25q64.h"          /* external SPI NOR flash (frame storage) */
-#include "sccb.h" 
+#include "mpu6050.h"
+#include "gy89.h"
+#include "i2c_scan.h"
+#include "servo.h"
+#include "platform_sccb.h"
+#include "platform_camera.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -38,28 +44,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define MPU6050_I2C_ADDR      (0x68 << 1)  
-#define LSM303D_ADDR   (0x1D << 1)
-#define L3GD20_ADDR    (0x6B << 1)
-#define BMP180_ADDR    (0x77 << 1)
-
-#define MPU6050_REG_WHO_AM_I  0x75         
-#define MPU6050_REG_PWR_MGMT_1 0x6B        
-
-#define W25Q_CMD_JEDEC_ID     0x9F
-#define W25Q_CS_PORT          GPIOB
-#define W25Q_CS_PIN           GPIO_PIN_12
-
-#define MPU6050_REG_TEMP_OUT_H  0x41
-
 #define UART_BAUD  921600u
-
-#define OV7670_SCCB_ADDR  0x21          /* 7-bit SCCB slave address */
-
-#define SCCB_SCL_PORT   GPIOB
-#define SCCB_SCL_PIN    GPIO_PIN_8
-#define SCCB_SDA_PORT   GPIOB
-#define SCCB_SDA_PIN    GPIO_PIN_9
 
 /* USER CODE END PD */
 
@@ -102,611 +87,8 @@ int _write(int file, char *ptr, int len) {
     return len;
 }
 
-void I2C_Scan(void) {
-    printf("Сканування шини I2C1...\r\n");
-    uint8_t count = 0;
-    for (uint16_t addr = 1; addr < 128; addr++) {
-        if (HAL_I2C_IsDeviceReady(&hi2c1, (addr << 1), 1, 10) == HAL_OK) {
-            printf(" Знайдено пристрій за адресою: 0x%02X\r\n", addr);
-            count++;
-        }
-    }
-    printf("Сканування завершено. Знайдено пристроїв: %d\r\n", count);
-}
-
-void W25Q_Select(void) {
-    HAL_GPIO_WritePin(W25Q_CS_PORT, W25Q_CS_PIN, GPIO_PIN_RESET);
-}
-
-void W25Q_Unselect(void) {
-    HAL_GPIO_WritePin(W25Q_CS_PORT, W25Q_CS_PIN, GPIO_PIN_SET);
-}
-
-void W25Q64_ReadID(void) {
-    uint8_t tx_buf[4] = {0x9F, 0x00, 0x00, 0x00};
-    uint8_t rx_buf[4] = {0};
-
-    W25Q_Select();
-    HAL_SPI_TransmitReceive(&hspi2, tx_buf, rx_buf, 4, 100);
-    W25Q_Unselect();
-
-    uint8_t id[3] = {rx_buf[1], rx_buf[2], rx_buf[3]};
-
-    printf("[W25Q64] JEDEC ID: 0x%02X 0x%02X 0x%02X ", id[0], id[1], id[2]);
-    if (id[0] == 0xEF && id[1] == 0x40 && id[2] == 0x17) {
-        printf("(OK - W25Q64 знайдено)\r\n");
-    } else {
-        printf("(Помилка або невідомий чіп)\r\n");
-    }
-}
-
-void MPU6050_Init(void) {
-    uint8_t chip_id = 0;
-    
-    HAL_StatusTypeDef status = HAL_I2C_Mem_Read(&hi2c1, MPU6050_I2C_ADDR, 
-                                                MPU6050_REG_WHO_AM_I, 
-                                                I2C_MEMADD_SIZE_8BIT, 
-                                                &chip_id, 1, 100);
-    if (status == HAL_OK) {
-        printf("[MPU6050] WHO_AM_I: 0x%02X ", chip_id);
-        if (chip_id == 0x68) {
-            printf("(OK)\r\n");
-            
-            /* Вихід з режиму Sleep (запис 0 у PWR_MGMT_1) */
-            uint8_t pwr_mgmt = 0x00;
-            HAL_I2C_Mem_Write(&hi2c1, MPU6050_I2C_ADDR, MPU6050_REG_PWR_MGMT_1, 
-                              I2C_MEMADD_SIZE_8BIT, &pwr_mgmt, 1, 100);
-            printf("[MPU6050] Прокинуто, активовано робочий режим.\r\n");
-        } else {
-            printf("(Невірний ID, очікується 0x68)\r\n");
-        }
-    } else {
-        printf("[MPU6050] Помилка зчитування по I2C!\r\n");
-    }
-}
-
-void Servo_Init(void) {
-    __HAL_TIM_SET_PRESCALER(&htim3, 84 - 1);
-    __HAL_TIM_SET_AUTORELOAD(&htim3, 20000 - 1);
-
-    HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
-
-    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 1500);
-}
-
-void Servo_SetAngle(uint8_t angle) {
-    if (angle > 180) angle = 180;
-    /* 0° = ~1000 мкс (1.0 мс), 180° = ~2000 мкс (2.0 мс) */
-    uint32_t pulse = 1000 + ((uint32_t)angle * 1000) / 180;
-    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, pulse);
-}
-
-void GY89_ReadIDs(void) {
-    uint8_t id = 0;
-
-    HAL_I2C_Mem_Read(&hi2c1, LSM303D_ADDR, 0x0F, I2C_MEMADD_SIZE_8BIT, &id, 1, 100);
-    printf("[LSM303D] WHO_AM_I: 0x%02X\r\n", id);
-
-    HAL_I2C_Mem_Read(&hi2c1, L3GD20_ADDR, 0x0F, I2C_MEMADD_SIZE_8BIT, &id, 1, 100);
-    printf("[L3GD20]  WHO_AM_I: 0x%02X\r\n", id);
-
-    HAL_I2C_Mem_Read(&hi2c1, BMP180_ADDR, 0xD0, I2C_MEMADD_SIZE_8BIT, &id, 1, 100);
-    printf("[BMP180]  CHIP_ID:  0x%02X\r\n", id);
-}
-HAL_StatusTypeDef MPU6050_ReadTemperature(float *temp_c) {
-    uint8_t raw_data[2] = {0};
-    
-    /* Зчитуємо послідовно 2 байти (TEMP_OUT_H та TEMP_OUT_L) */
-    HAL_StatusTypeDef status = HAL_I2C_Mem_Read(&hi2c1, 
-                                                MPU6050_I2C_ADDR, 
-                                                MPU6050_REG_TEMP_OUT_H, 
-                                                I2C_MEMADD_SIZE_8BIT, 
-                                                raw_data, 2, 100);                
-
-    if (status == HAL_OK) {
-        /* Об'єднуємо два байти в одне 16-бітне знакове число */
-        int16_t raw_temp = (int16_t)((raw_data[0] << 8) | raw_data[1]);
-        
-        /* Розрахунок температури згідно з даташитом */
-        
-        *temp_c = ((float)raw_temp / 340.0f) + 36.53f;
-    }
-    
-    return status;
-}
-
-static void sccb_pins_reinit(void)
-{
-    __HAL_RCC_I2C1_CLK_DISABLE();               /* free the peripheral */
-    /* GPIO open-drain з internal pull-up */
-    GPIO_InitTypeDef g = { .Mode = GPIO_MODE_OUTPUT_OD,
-                           .Pull = GPIO_PULLUP,
-                           .Speed = GPIO_SPEED_FREQ_HIGH,
-                           .Pin  = SCCB_SCL_PIN | SCCB_SDA_PIN };
-    HAL_GPIO_Init(GPIOB, &g);
-}
-
-static void Camera_HardReset(void)
-{
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_RESET);
-    HAL_Delay(10);
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_SET);
-    HAL_Delay(50);
-}
-
-/** Set PWDN state via PA1.  0=LOW, 1=HIGH. */
-static void Camera_SetPwdn(int high)
-{
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2, high ? GPIO_PIN_SET : GPIO_PIN_RESET);
-    HAL_Delay(20);
-}
-
-static void ov7670_apply_regs(const uint8_t regs[][2], int nregs)
-{
-    for (int i = 0; i < nregs; i++) {
-        uint8_t reg = regs[i][0];
-        uint8_t val = regs[i][1];
-        if (reg == 0xFF && val == 0xFF) break;      /* END marker */
-
-        sccb_write_reg(0x21, reg, val);
-
-        if (reg == 0x12 && val == 0x80) {
-            /* Soft reset — the chip is unusable for ~1 ms after this. */
-            HAL_Delay(100);
-        }
-    }
-}
-
-/**
- * @brief Program the sensor's hardware window.
- *
- * Straight port of Linux ov7670_set_hw().  The low bits of hstart/hstop live
- * in HREF[2:0] / HREF[5:3] and the low bits of vstart/vstop in VREF[1:0] /
- * VREF[3:2], so both need read-modify-write to preserve the upper bits (HREF
- * top two bits are an undocumented "edge offset" that must not be clobbered).
- */
-static void ov7670_set_hw(int hstart, int hstop, int vstart, int vstop)
-{
-    sccb_write_reg(0x21, REG_HSTART, (uint8_t)((hstart >> 3) & 0xFF));
-    sccb_write_reg(0x21, REG_HSTOP,  (uint8_t)((hstop  >> 3) & 0xFF));
-    int v = sccb_read_reg(0x21, REG_HREF);
-    if (v < 0) v = 0x80;
-    v = (v & 0xC0) | ((hstop & 0x07) << 3) | (hstart & 0x07);
-    HAL_Delay(10);
-    sccb_write_reg(0x21, REG_HREF, (uint8_t)v);
-
-    sccb_write_reg(0x21, REG_VSTART, (uint8_t)((vstart >> 2) & 0xFF));
-    sccb_write_reg(0x21, REG_VSTOP,  (uint8_t)((vstop  >> 2) & 0xFF));
-    v = sccb_read_reg(0x21, REG_VREF);
-    if (v < 0) v = 0x00;
-    v = (v & 0xF0) | ((vstop & 0x03) << 2) | (vstart & 0x03);
-    HAL_Delay(10);
-    sccb_write_reg(0x21, REG_VREF, (uint8_t)v);
-}
-
 /* Set once FINIT has confirmed a real JEDEC ID. */
 static int s_flash_ok = 0;
-
-/* Currently selected mode index (see ov7670_modes[] in camera_blob.h). */
-static int s_mode = 1;   /* default: CIF 352x288 full FOV */
-
-/**
- * @brief Full sensor bring-up: common init, then the selected mode's
- *        register set, then the mode's hardware window.
- */
-static void ov7670_configure(int mode)
-{
-    if (mode < 0 || mode >= (int)OV7670_MODE_COUNT) mode = 0;
-    s_mode = mode;
-    const ov7670_mode_t *m = &ov7670_modes[mode];
-
-    ov7670_apply_regs(ov7670_common_regs, (int)(sizeof(ov7670_common_regs)/2));
-    ov7670_apply_regs(m->regs, m->nregs);
-    ov7670_set_hw(m->hstart, m->hstop, m->vstart, m->vstop);
-
-    printf("MODE %d %s nominal=%ux%u window=h[%u..%u] v[%u..%u]\r\n",
-           mode, m->name, m->width, m->height,
-           m->hstart, m->hstop, m->vstart, m->vstop);
-}
-
-/**
- * @brief Freeze / unfreeze the automatic exposure, gain and white balance.
- *
- * Essential for multi-pass strip capture: each strip comes from a different
- * physical frame, so if AEC/AGC/AWB keep adapting between passes the strips
- * end up with different brightness and the assembled image shows horizontal
- * banding.  Clearing the enable bits in COM8 latches whatever values the
- * loops had converged to, which keeps every subsequent frame identical.
- */
-static void ov7670_freeze_auto(int freeze)
-{
-    int com8 = sccb_read_reg(0x21, REG_COM8);
-    if (com8 < 0) com8 = 0xE7;
-    if (freeze) {
-        /* Keep FASTAEC/AECSTEP/BFILT, drop AGC | AWB | AEC. */
-        com8 &= (uint8_t)~(COM8_AGC | COM8_AWB | COM8_AEC);
-    } else {
-        com8 |= (COM8_AGC | COM8_AWB | COM8_AEC);
-    }
-    sccb_write_reg(0x21, REG_COM8, (uint8_t)com8);
-
-    int gain  = sccb_read_reg(0x21, REG_GAIN);
-    int aech  = sccb_read_reg(0x21, REG_AECH);
-    int aechh = sccb_read_reg(0x21, REG_AECHH);
-    int vref  = sccb_read_reg(0x21, REG_VREF);
-    printf("AUTO %s COM8=0x%02X GAIN=0x%02X AECH=0x%02X AECHH=0x%02X VREF=0x%02X\r\n",
-           freeze ? "frozen" : "enabled", com8 & 0xFF,
-           gain & 0xFF, aech & 0xFF, aechh & 0xFF, vref & 0xFF);
-}
-
-
-/* ==================================================================
- * Frame capture (F401 has no DCMI — polling GPIO instead).
- *
- * Pin map:
- *   VSYNC -> PB10   (frame boundary)
- *   HREF  -> PB4    (line valid = HIGH during pixel bytes)
- *   PCLK  -> PB5    (rising edge = sample pixel byte)
- *   D0..D7 -> PC0..PC7   (parallel, read as GPIOC->IDR & 0xFF)
- *
- * Sensor is configured for QCIF (176x144) YUV422:
- *   176 * 144 * 2 = 50688 bytes/frame.
- * With PLLx4 and CLKRC=0x9F (/32 divider), effective PCLK ≈ 2.6 MHz,
- * so we have ~32 CPU cycles per pixel — enough for a tight polling loop.
- */
-/* Largest line we ever read: the full 656-pixel array = 1312 bytes YUV422.
- * (Plain VGA needs only 1280; the extra covers the wider full-array window.) */
-#define MAX_LINE_BYTES   1312u
-/* Strip height.  40 KB fits comfortably in the 96 KB SRAM alongside the HAL
- * and the stack, and divides both 480 (VGA, 15 passes) and 288 (CIF, 9). */
-#define STRIP_LINES      32u
-#define STRIP_BYTES      (MAX_LINE_BYTES * STRIP_LINES)
-
-/* Single-frame snapshot output: CIF 352x288 is exactly 2x(176x144), so a 2x2
- * box average taken while the frame streams needs only the *output* in RAM.
- * That makes a genuine one-instant capture possible at the target resolution
- * despite there being no FIFO and no room for a full CIF frame. */
-#define SNAP_W           176u
-#define SNAP_H           144u
-#define SNAP_BYTES       (SNAP_W * SNAP_H * 2u)          /* 50688 */
-
-/* One buffer serves both paths; only one is ever active. */
-#define CAM_BUF_BYTES    ((STRIP_BYTES > SNAP_BYTES) ? STRIP_BYTES : SNAP_BYTES)
-static uint8_t s_framebuffer[CAM_BUF_BYTES] __attribute__((aligned(4)));
-
-#define CAM_VSYNC   GPIO_PIN_1
-#define CAM_HREF    GPIO_PIN_4
-#define CAM_PCLK    GPIO_PIN_0
-
-/* Frame telemetry counters — filled by the capture routines. */
-static volatile uint32_t s_last_lines_captured = 0;
-static volatile uint32_t s_last_href_dropouts  = 0;
-/* Shortest / longest line actually delivered in the last strip.  If these are
- * not both equal to the requested line length, the sensor geometry and our
- * read length disagree and the image will be distorted. */
-static volatile uint32_t s_last_line_min = 0;
-static volatile uint32_t s_last_line_max = 0;
-/* Lines that did not deliver the full requested byte count. */
-static volatile uint32_t s_last_short_lines = 0;
-
-/**
- * @brief Block until the start of the next frame's pixel data.
- *
- * Sequence: wait for VSYNC low (we may be sitting inside a pulse), then for
- * the rising edge (start of the vertical sync pulse), then for the falling
- * edge — at which point the first HREF of the new frame is imminent.
- * Runs with interrupts enabled so HAL_GetTick() can drive the timeout.
- */
-static int cam_sync_frame_start(uint32_t timeout_ms)
-{
-    volatile uint32_t *A_IDR = &GPIOA->IDR;
-    uint32_t t0 = HAL_GetTick();
-    while ((*A_IDR & CAM_VSYNC) != 0)
-        if (HAL_GetTick() - t0 > timeout_ms) return -1;
-    while ((*A_IDR & CAM_VSYNC) == 0)
-        if (HAL_GetTick() - t0 > timeout_ms) return -1;
-    while ((*A_IDR & CAM_VSYNC) != 0)
-        if (HAL_GetTick() - t0 > timeout_ms) return -1;
-    return 0;
-}
-
-/* Poll-loop guard: worst case a line lasts ~1 ms == ~84000 cycles, so a
- * couple of million iterations is a generous ceiling that still bails out
- * instead of hanging the firmware if the camera stops clocking. */
-#define CAM_GUARD  3000000u
-/* Per-line guard for the sampling loop.  A VGA line is 1280 bytes at ~10
- * cycles per poll iteration, so ~200k iterations is far beyond normal while
- * still bounding the loop: COM10=0x20 suppresses PCLK during blanking, so an
- * unbounded wait for one more edge than the line contains would hang the
- * firmware outright (it did, silently, for two debugging sessions). */
-#define CAM_LINE_GUARD  400000u
-
-/**
- * @brief Read one line: wait for HREF, then sample every PCLK rising edge
- *        until HREF drops.
- *
- * Shared by the strip and snapshot paths so there is exactly one copy of the
- * timing-critical logic.  See cam_capture_strip() for why the loop is bounded
- * by HREF and why GPIOC is read in the same iteration as GPIOB.
- *
- * @return 0 on success, -1 if VSYNC arrived first (frame ended), -2 on stall.
- */
-static int cam_read_line(uint8_t *dst, uint32_t line_bytes, uint32_t *out_cnt)
-{
-    volatile uint32_t *A_IDR = &GPIOA->IDR;
-    volatile uint32_t *C_IDR = &GPIOC->IDR;
-    uint32_t guard = CAM_LINE_GUARD;
-
-    for (;;) {
-        uint32_t sa = *A_IDR;
-        if (sa & CAM_HREF)  break;
-        if (sa & CAM_VSYNC) return -1;
-        if (--guard == 0)   return -2;
-    }
-
-    uint32_t cnt = 0, prev = 0;
-    guard = CAM_LINE_GUARD;
-    for (;;) {
-        uint32_t sa = *A_IDR;
-        uint32_t sc = *C_IDR;
-        if ((sa & CAM_HREF) == 0) break;
-        uint32_t cur = sa & CAM_PCLK;
-        if (cur != 0 && prev == 0 && cnt < line_bytes) {
-            dst[cnt++] = (uint8_t)(sc & 0xFFu);
-        }
-        prev = cur;
-        if (--guard == 0) return -2;
-    }
-    *out_cnt = cnt;
-    while (cnt < line_bytes) dst[cnt++] = 0;   /* keep the row rectangular */
-    return 0;
-}
-
-/**
- * @brief Single-frame snapshot: 2x2 box average of the current mode into
- *        SNAP_W x SNAP_H, taken from ONE frame.
- *
- * Unlike the strip path, nothing here is composited across frames, so a moving
- * subject cannot tear the result.  Requires the sensor to be in a mode whose
- * output is exactly twice the snapshot size (CIF 352x288).
- *
- * The two input lines are buffered raw and averaged in the horizontal blanking
- * gap that follows them, which keeps the arithmetic out of the sampling loop
- * where it would eat the timing margin.
- *
- * @return bytes produced, or a negative error code.
- */
-static int cam_snapshot(uint32_t in_w, uint32_t *out_short)
-{
-    if (in_w != SNAP_W * 2u) return -5;
-    const uint32_t in_lb = in_w * 2u;                 /* 704 for CIF */
-    static uint8_t raw[SNAP_W * 4u];
-    static uint16_t acc[SNAP_W * 2u];      /* U, Y0, V, Y1 per output group */
-    uint32_t shortlines = 0;
-
-    if (cam_sync_frame_start(2000) != 0) return -1;
-
-    uint8_t *out = s_framebuffer;
-    __disable_irq();
-    const uint32_t groups = SNAP_W / 2u;
-    for (uint32_t oy = 0; oy < SNAP_H; oy++) {
-        /* UYVY in, UYVY out.  One output group (U Y0 V Y1) covers two input
-         * groups on each of two lines, i.e. a 2x2 block of pixels:
-         *   U  = mean of both U samples on both lines
-         *   Y0 = mean of the two luma samples of the first input group
-         *   Y1 = mean of the two luma samples of the second input group
-         *   V  = mean of both V samples on both lines
-         * Every captured pixel therefore contributes exactly once.
-         *
-         * The two lines are accumulated in separate blanking gaps so neither
-         * gap has to carry the whole cost. */
-        for (uint32_t half = 0; half < 2u; half++) {
-            uint32_t cnt = 0;
-            if (cam_read_line(raw, in_lb, &cnt) != 0) { __enable_irq(); return -6; }
-            if (cnt != in_lb) shortlines++;
-
-            const uint8_t *a = raw;
-            uint16_t *ac = acc;
-            if (half == 0) {
-                for (uint32_t ox = 0; ox < groups; ox++) {
-                    ac[0] = (uint16_t)(a[0] + a[4]);
-                    ac[1] = (uint16_t)(a[1] + a[3]);
-                    ac[2] = (uint16_t)(a[2] + a[6]);
-                    ac[3] = (uint16_t)(a[5] + a[7]);
-                    ac += 4; a += 8;
-                }
-            } else {
-                for (uint32_t ox = 0; ox < groups; ox++) {
-                    out[0] = (uint8_t)((ac[0] + a[0] + a[4]) >> 2);
-                    out[1] = (uint8_t)((ac[1] + a[1] + a[3]) >> 2);
-                    out[2] = (uint8_t)((ac[2] + a[2] + a[6]) >> 2);
-                    out[3] = (uint8_t)((ac[3] + a[5] + a[7]) >> 2);
-                    out += 4; ac += 4; a += 8;
-                }
-            }
-        }
-    }
-    __enable_irq();
-    if (out_short) *out_short = shortlines;
-    return (int)(out - s_framebuffer);
-}
-
-/**
- * @brief Capture `n_lines` lines starting at line `start_line` of the frame,
- *        reading exactly `line_bytes` bytes from each.
- *
- * Lines before the window are skipped by counting HREF pulses only, which is
- * cheap, so the strip boundaries land on exactly the same sensor rows every
- * pass.  That is what makes multi-pass assembly seamless.
- *
- * @return number of bytes stored, or a negative error code.
- */
-static int cam_capture_strip(uint32_t line_bytes, uint32_t start_line, uint32_t n_lines)
-{
-    if (line_bytes > MAX_LINE_BYTES) return -2;
-    if (n_lines * line_bytes > STRIP_BYTES) return -3;
-
-    volatile uint32_t *A_IDR = &GPIOA->IDR;
-    volatile uint32_t *C_IDR = &GPIOC->IDR;
-    uint8_t *p = s_framebuffer;
-    uint32_t lines = 0, dropouts = 0;
-    uint32_t cnt_min = 0xFFFFFFFFu, cnt_max = 0, shortlines = 0;
-    int stall = 0;
-
-    if (cam_sync_frame_start(2000) != 0) return -1;
-
-    __disable_irq();
-
-    /* --- Skip to the top of the requested strip -------------------------- */
-    for (uint32_t i = 0; i < start_line; i++) {
-        uint32_t guard = CAM_GUARD;
-        while ((*A_IDR & CAM_HREF) == 0) {
-            if ((*A_IDR & CAM_VSYNC) != 0) { dropouts = n_lines; goto done; }
-            if (--guard == 0) { dropouts = n_lines; goto done; }
-        }
-        guard = CAM_GUARD;
-        while ((*A_IDR & CAM_HREF) != 0) { if (--guard == 0) goto done; }
-    }
-
-    /* --- Read the strip -------------------------------------------------- */
-    for (uint32_t line = 0; line < n_lines; line++) {
-        uint32_t guard = CAM_GUARD;
-        while ((*A_IDR & CAM_HREF) == 0) {
-            if ((*A_IDR & CAM_VSYNC) != 0) { dropouts = n_lines - line; goto done; }
-            if (--guard == 0) { dropouts = n_lines - line; goto done; }
-        }
-        lines++;
-
-        /* Sample every PCLK rising edge for as long as HREF stays asserted.
-         *
-         * Bounding the loop by HREF rather than by a fixed byte count is what
-         * keeps each line self-aligning.  The previous version read exactly
-         * line_bytes and tried to fix the start phase by first waiting for
-         * PCLK to go low — but that discards byte 0 whenever PCLK happens to
-         * be high when HREF rises, so the fixed-count read ran one byte past
-         * the line end and stole a byte from the next line.  The error
-         * accumulated down the strip and showed up as a progressive
-         * horizontal shear that reset at every strip boundary.
-         *
-         * prev starts at 0 deliberately: if PCLK is already high when we
-         * notice HREF, that high phase *is* byte 0 (we detect HREF within a
-         * few cycles, far less than a PCLK period), so it must be sampled.
-         */
-        uint32_t cnt = 0, prev = 0;
-        guard = CAM_LINE_GUARD;
-        for (;;) {
-            uint32_t sa = *A_IDR;
-            /* Sample the data bus in the same iteration as the clock, two
-             * cycles after it, instead of only after deciding an edge
-             * occurred.  At VGA rates PCLK's high phase is ~16 CPU cycles, so
-             * the extra few cycles the old ordering spent before reading
-             * GPIOC were enough to occasionally latch the *next* byte.  That
-             * shifted single pixels by one byte, swapping U and V for that
-             * pair, and showed up as a fine pink/green checkerboard. */
-            uint32_t sc = *C_IDR;
-            if ((sa & CAM_HREF) == 0) break;          /* end of line */
-            uint32_t cur = sa & CAM_PCLK;
-            if (cur != 0 && prev == 0 && cnt < line_bytes) {
-                *p++ = (uint8_t)(sc & 0xFFu);
-                cnt++;
-            }
-            prev = cur;
-            if (--guard == 0) { stall = 1; goto done; }
-        }
-        /* Track the real sample count before padding.  Padding used to hide a
-         * missed PCLK edge behind a perfect-looking 1280, which cost a long
-         * debugging detour: the line was one byte short, so U/V rotated and
-         * the row came out magenta. */
-        if (cnt_min > cnt) cnt_min = cnt;
-        if (cnt_max < cnt) cnt_max = cnt;
-        if (cnt != line_bytes) shortlines++;
-
-        /* Keep the strip rectangular so a glitch shifts nothing below it. */
-        while (cnt < line_bytes) { *p++ = 0; cnt++; }
-        guard = CAM_GUARD;
-        while ((*A_IDR & CAM_HREF) != 0) { if (--guard == 0) goto done; }
-    }
-done:
-    __enable_irq();
-    s_last_lines_captured = lines;
-    s_last_href_dropouts  = dropouts;
-    s_last_line_min = (cnt_min == 0xFFFFFFFFu) ? 0 : cnt_min;
-    s_last_line_max = cnt_max;
-    s_last_short_lines = shortlines;
-    if (stall) return -4;
-    return (int)(p - s_framebuffer);
-}
-
-/**
- * @brief Measure what the sensor is actually emitting, independent of any
- *        assumption about the configured mode.
- *
- * Counts HREF pulses between two VSYNC pulses and, for each line, counts PCLK
- * rising edges.  The edge detector samples GPIOA in a ~7-cycle loop while
- * PCLK's period is ~32 cycles at CLKRC=/32, so no edges are missed.
- *
- * This is the ground truth used to pick strip geometry — it caught the
- * 72-unique-lines behaviour of built-in QCIF that telemetry had hidden.
- */
-static void cam_probe(void)
-{
-    volatile uint32_t *A_IDR = &GPIOA->IDR;
-    uint32_t lines = 0;
-    uint32_t first = 0, mn = 0xFFFFFFFFu, mx = 0;
-    uint32_t t_start, t_end;
-
-    if (cam_sync_frame_start(2000) != 0) { printf("ERR probe: no VSYNC\r\n"); return; }
-
-    t_start = HAL_GetTick();
-    __disable_irq();
-    for (;;) {
-        /* Wait for the next HREF, or bail out when the frame ends. */
-        uint32_t guard = CAM_GUARD;
-        for (;;) {
-            uint32_t s = *A_IDR;
-            if (s & CAM_HREF)  break;
-            if (s & CAM_VSYNC) goto frame_done;
-            if (--guard == 0)  goto frame_done;
-        }
-        /* Count PCLK rising edges for as long as HREF stays asserted. */
-        uint32_t cnt = 0, prev = 0;
-        for (;;) {
-            uint32_t s = *A_IDR;
-            if ((s & CAM_HREF) == 0) break;
-            uint32_t cur = s & CAM_PCLK;
-            if (cur && !prev) cnt++;
-            prev = cur;
-        }
-        if (lines == 0) first = cnt;
-        if (cnt < mn) mn = cnt;
-        if (cnt > mx) mx = cnt;
-        lines++;
-        if (lines > 2000) break;   /* safety */
-    }
-frame_done:
-    __enable_irq();
-    t_end = HAL_GetTick();
-
-    if (mn == 0xFFFFFFFFu) mn = 0;
-    printf("PROBE href_lines=%lu bytes_first=%lu bytes_min=%lu bytes_max=%lu frame_ms=%lu\r\n",
-           (unsigned long)lines, (unsigned long)first,
-           (unsigned long)mn, (unsigned long)mx,
-           (unsigned long)(t_end - t_start));
-    printf("PROBE implies width=%lu px height=%lu lines\r\n",
-           (unsigned long)(first / 2u), (unsigned long)lines);
-}
-
-/**
- * @brief Compare two captured lines byte-for-byte.  Used to detect the
- *        sensor's line-doubling behaviour automatically.
- */
-static uint32_t cam_line_diff(const uint8_t *a, const uint8_t *b, uint32_t n)
-{
-    uint32_t d = 0;
-    for (uint32_t i = 0; i < n; i++) if (a[i] != b[i]) d++;
-    return d;
-}
-
 
 /**
  * @brief CRC-32 (IEEE 802.3, the same polynomial Python's zlib.crc32 uses)
@@ -744,10 +126,10 @@ static void send_b64_named(const char *marker, const uint8_t *src, int size,
            marker, (unsigned long)width, (unsigned long)start_line,
            (unsigned long)lines, size,
            (unsigned long)crc32_buf(src, (uint32_t)size),
-           (unsigned long)s_last_lines_captured,
-           (unsigned long)s_last_href_dropouts,
-           (unsigned long)s_last_line_min, (unsigned long)s_last_line_max,
-           (unsigned long)s_last_short_lines);
+           (unsigned long)cam_last_lines_captured,
+           (unsigned long)cam_last_href_dropouts,
+           (unsigned long)cam_last_line_min, (unsigned long)cam_last_line_max,
+           (unsigned long)cam_last_short_lines);
 
     char line[80];
     int  col = 0;
@@ -785,7 +167,7 @@ static void send_b64_named(const char *marker, const uint8_t *src, int size,
 static void cam_send_strip_named(const char *marker, int size, uint32_t width,
                                  uint32_t start_line, uint32_t lines)
 {
-    send_b64_named(marker, s_framebuffer, size, width, start_line, lines);
+    send_b64_named(marker, cam_framebuffer, size, width, start_line, lines);
 }
 
 static void cam_send_strip(int size, uint32_t width, uint32_t start_line, uint32_t lines)
@@ -948,9 +330,10 @@ static void cmd_help(void)
 
 static void cmd_modes(void)
 {
-    for (unsigned i = 0; i < OV7670_MODE_COUNT; i++)
-        printf("MODEDEF %u %s %ux%u\r\n", i, ov7670_modes[i].name,
-               ov7670_modes[i].width, ov7670_modes[i].height);
+    for (unsigned i = 0; i < ov7670_mode_count(); i++) {
+        const ov7670_mode_t *m = ov7670_mode_info((int)i);
+        printf("MODEDEF %u %s %ux%u\r\n", i, m->name, m->width, m->height);
+    }
 }
 
 /**
@@ -966,8 +349,8 @@ static void cmd_dup(uint32_t line_bytes)
     if (got <= 0) { printf("ERR dup capture %d\r\n", got); return; }
     uint32_t lines = (uint32_t)got / line_bytes;
     for (uint32_t i = 1; i < lines && i < 8; i++) {
-        uint32_t d = cam_line_diff(s_framebuffer,
-                                   s_framebuffer + i * line_bytes, line_bytes);
+        uint32_t d = cam_line_diff(cam_framebuffer,
+                                   cam_framebuffer + i * line_bytes, line_bytes);
         printf("DUP line0 vs line%lu diff=%lu/%lu\r\n",
                (unsigned long)i, (unsigned long)d, (unsigned long)line_bytes);
     }
@@ -994,7 +377,8 @@ static void handle_command(char *cmd)
 
     if (!strcmp(argv[0], "PING")) {
         printf("PONG build=%s %s mode=%d %s flash=%d rx=%lu ore=%lu cmds=%lu\r\n",
-               __DATE__, __TIME__, s_mode, ov7670_modes[s_mode].name, s_flash_ok,
+               __DATE__, __TIME__, ov7670_current_mode(),
+               ov7670_mode_info(ov7670_current_mode())->name, s_flash_ok,
                (unsigned long)s_rx_bytes, (unsigned long)s_rx_overruns,
                (unsigned long)s_cmd_count);
     } else if (!strcmp(argv[0], "HELP") || !strcmp(argv[0], "?")) {
@@ -1007,7 +391,7 @@ static void handle_command(char *cmd)
     } else if (!strcmp(argv[0], "MODE")) {
         if (argc < 2) { printf("ERR usage MODE <n>\r\n"); return; }
         int n = (int)strtol(argv[1], NULL, 0);
-        if (n < 0 || n >= (int)OV7670_MODE_COUNT) { printf("ERR bad mode\r\n"); return; }
+        if (n < 0 || n >= (int)ov7670_mode_count()) { printf("ERR bad mode\r\n"); return; }
         ov7670_configure(n);
         HAL_Delay(1200);                    /* let AEC/AGC/AWB re-converge */
         for (int i = 0; i < 3; i++) (void)cam_sync_frame_start(2000);
@@ -1073,15 +457,15 @@ static void handle_command(char *cmd)
         printf("DBG strip ret=%d\r\n", got);
         if (got < 0) { printf("ERR strip %d\r\n", got); return; }
         printf("STRIPINFO lines=%lu dropouts=%lu bytes=%d\r\n",
-               (unsigned long)s_last_lines_captured,
-               (unsigned long)s_last_href_dropouts, got);
-        if (s_last_href_dropouts != 0) { printf("ERR dropouts\r\n"); return; }
+               (unsigned long)cam_last_lines_captured,
+               (unsigned long)cam_last_href_dropouts, got);
+        if (cam_last_href_dropouts != 0) { printf("ERR dropouts\r\n"); return; }
         cam_send_strip(got, lb / 2u, start, n);
     } else if (!strcmp(argv[0], "FRAME")) {
         /* Whole frame from one command: the firmware walks the strips itself
          * and streams each chunk.  Nothing is sent to the board between
          * chunks, so a frame can no longer be lost to a dropped command. */
-        const ov7670_mode_t *m = &ov7670_modes[s_mode];
+        const ov7670_mode_t *m = ov7670_mode_info(ov7670_current_mode());
         uint32_t lb    = (argc >= 2) ? (uint32_t)strtol(argv[1], NULL, 0)
                                      : (uint32_t)m->width * 2u;
         uint32_t total = (argc >= 3) ? (uint32_t)strtol(argv[2], NULL, 0)
@@ -1095,7 +479,7 @@ static void handle_command(char *cmd)
         printf("---FRAME-BEGIN w=%lu h=%lu strip=%u strips=%lu mode=%d %s---\r\n",
                (unsigned long)(lb / 2u), (unsigned long)total,
                (unsigned)STRIP_LINES, (unsigned long)nstrips,
-               s_mode, m->name);
+               ov7670_current_mode(), m->name);
         uint32_t frame_crc = 0, frame_bytes = 0;
         for (uint32_t y = 0; y < total; y += STRIP_LINES) {
             uint32_t n = total - y;
@@ -1104,11 +488,11 @@ static void handle_command(char *cmd)
             if (got < 0) {
                 printf("ERR frame strip start=%lu ret=%d lines=%lu drop=%lu\r\n",
                        (unsigned long)y, got,
-                       (unsigned long)s_last_lines_captured,
-                       (unsigned long)s_last_href_dropouts);
+                       (unsigned long)cam_last_lines_captured,
+                       (unsigned long)cam_last_href_dropouts);
                 return;
             }
-            frame_crc = crc32_update(frame_crc, s_framebuffer, (uint32_t)got);
+            frame_crc = crc32_update(frame_crc, cam_framebuffer, (uint32_t)got);
             frame_bytes += (uint32_t)got;
             cam_send_strip(got, lb / 2u, y, n);
         }
@@ -1130,7 +514,7 @@ static void handle_command(char *cmd)
                (unsigned long)frame_bytes, (unsigned long)frame_crc);
     } else if (!strcmp(argv[0], "SNAP")) {
         /* One frame, averaged 2x2 in the MCU — immune to scene motion. */
-        const ov7670_mode_t *m = &ov7670_modes[s_mode];
+        const ov7670_mode_t *m = ov7670_mode_info(ov7670_current_mode());
         uint32_t shortlines = 0;
         int got = cam_snapshot(m->width, &shortlines);
         if (got < 0) {
@@ -1228,10 +612,10 @@ static void handle_command(char *cmd)
         for (uint32_t off = 0; off < len; off += chunk) {
             uint32_t n = len - off;
             if (n > chunk) n = chunk;
-            int rc = w25_fast_read(addr + off, s_framebuffer, n);
+            int rc = w25_fast_read(addr + off, cam_framebuffer, n);
             if (rc != 0) { printf("ERR fast_read rc=%d\r\n", rc); return; }
-            crc = crc32_update(crc, s_framebuffer, n);
-            send_b64_named("STRIP", s_framebuffer, (int)n, n, off, 1);
+            crc = crc32_update(crc, cam_framebuffer, n);
+            send_b64_named("STRIP", cam_framebuffer, (int)n, n, off, 1);
         }
         printf("---FLASH-END bytes=%lu crc=%08lX---\r\n",
                (unsigned long)len, (unsigned long)crc);
@@ -1342,7 +726,7 @@ int main(void)
     }
 
     if (ov7670_ok) {
-        ov7670_configure(s_mode);
+        ov7670_configure(ov7670_current_mode());
         HAL_Delay(1200);                   /* AWB/AEC convergence */
     } else {
         printf("ERR OV7670 not detected on SCCB\r\n");
@@ -1392,7 +776,7 @@ int main(void)
         * the current mode using as many strips as needed. */
     uint8_t btn = HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin);
     if (btn == 0 && btn_prev == 1) {
-        const ov7670_mode_t *m = &ov7670_modes[s_mode];
+        const ov7670_mode_t *m = ov7670_mode_info(ov7670_current_mode());
         uint32_t lb = (uint32_t)m->width * 2u;
         printf("BUTTON capture mode=%s %ux%u\r\n", m->name, m->width, m->height);
         for (uint32_t y = 0; y < m->height; y += STRIP_LINES) {
@@ -1419,7 +803,7 @@ int main(void)
                 (unsigned long)s_rx_overruns, (unsigned long)s_cmd_count);
         float temp = 24.68f;
 
-        if (MPU6050_ReadTemperature(&temp) == HAL_OK) {
+        if (MPU6050_ReadTemperature(&temp)) {
             int32_t int_part = (int32_t)temp;
             // Отримуємо 2 знаки після коми (множимо на 100)
             int32_t frac_part = (int32_t)((temp - (float)int_part) * 100.0f);

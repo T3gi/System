@@ -26,7 +26,7 @@
 #ifndef INC_W25Q64_H_
 #define INC_W25Q64_H_
 
-#include "main.h"
+#include <stdint.h>
 
 /* Geometry */
 #define W25_PAGE_SIZE     256u
@@ -42,6 +42,12 @@
 /* Status register 1 bits */
 #define W25_SR1_BUSY      0x01u
 #define W25_SR1_WEL       0x02u
+
+/**
+ * @brief Boot-time JEDEC ID check through HAL SPI2 (CubeMX settings) and
+ *        print the result.  Does not touch the register-path setup below.
+ */
+void W25Q64_ReadID(void);
 
 /**
  * @brief Bring up SPI2 + CS and read the JEDEC ID.
