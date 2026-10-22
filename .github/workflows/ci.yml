@@ -1,0 +1,20 @@
+name: CI
+
+on:
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+
+      - name: Build Docker image
+        run: docker build -t stm32-build docker/
+
+      - name: Build firmware (runs check-arch first)
+        run: make build
+
+      - name: Host tests
+        run: make test
