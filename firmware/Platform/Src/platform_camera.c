@@ -6,8 +6,51 @@
  * are timing-critical and were moved here unchanged from main.c.
  */
 #include "platform_camera.h"
-#include "stm32f4xx_hal.h"
+#include "main.h"
 #include <stdio.h>
+
+extern TIM_HandleTypeDef htim1;
+
+/* Moved from main.c (MX_TIM1_XCLK_Init), where it sat outside the CubeMX
+ * USER CODE sections and would have been lost on regeneration. */
+uint32_t Camera_XclkStart(void)
+{
+    __HAL_RCC_TIM1_CLK_ENABLE();
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+
+    /* PA8 -> AF1 TIM1_CH1, push-pull, very high speed. */
+    GPIO_InitTypeDef g = {0};
+    g.Pin       = GPIO_PIN_8;
+    g.Mode      = GPIO_MODE_AF_PP;
+    g.Pull      = GPIO_NOPULL;
+    g.Speed     = GPIO_SPEED_FREQ_VERY_HIGH;
+    g.Alternate = GPIO_AF1_TIM1;
+    HAL_GPIO_Init(GPIOA, &g);
+
+    htim1.Instance               = TIM1;
+    htim1.Init.Prescaler         = 0;
+    htim1.Init.CounterMode       = TIM_COUNTERMODE_UP;
+    htim1.Init.Period            = 3;         /* ARR — 4 ticks total */
+    htim1.Init.ClockDivision     = TIM_CLOCKDIVISION_DIV1;
+    htim1.Init.RepetitionCounter = 0;
+    htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+    if (HAL_TIM_PWM_Init(&htim1) != HAL_OK) Error_Handler();
+
+    TIM_OC_InitTypeDef oc = {0};
+    oc.OCMode      = TIM_OCMODE_PWM1;
+    oc.Pulse       = 2;                        /* CCR — 50 % duty */
+    oc.OCPolarity  = TIM_OCPOLARITY_HIGH;
+    oc.OCNPolarity = TIM_OCNPOLARITY_HIGH;
+    oc.OCFastMode  = TIM_OCFAST_DISABLE;
+    oc.OCIdleState = TIM_OCIDLESTATE_RESET;
+    oc.OCNIdleState = TIM_OCNIDLESTATE_RESET;
+    if (HAL_TIM_PWM_ConfigChannel(&htim1, &oc, TIM_CHANNEL_1) != HAL_OK) Error_Handler();
+
+    /* PWM_Start on advanced-timer TIM1 also sets MOE (main output enable). */
+    if (HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1) != HAL_OK) Error_Handler();
+
+    return HAL_RCC_GetPCLK2Freq() / 4;
+}
 
 void Camera_HardReset(void)
 {

@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-void MPU6050_Init(void) {
+bool MPU6050_Init(void) {
     uint8_t chip_id = 0;
 
     bool ok = Platform_I2C_ReadReg(MPU6050_I2C_ADDR, MPU6050_REG_WHO_AM_I, &chip_id, 1);
@@ -14,14 +14,18 @@ void MPU6050_Init(void) {
 
             /* Вихід з режиму Sleep (запис 0 у PWR_MGMT_1) */
             uint8_t pwr_mgmt = 0x00;
-            Platform_I2C_WriteReg(MPU6050_I2C_ADDR, MPU6050_REG_PWR_MGMT_1, &pwr_mgmt, 1);
-            printf("[MPU6050] Прокинуто, активовано робочий режим.\r\n");
+            if (Platform_I2C_WriteReg(MPU6050_I2C_ADDR, MPU6050_REG_PWR_MGMT_1, &pwr_mgmt, 1)) {
+                printf("[MPU6050] Прокинуто, активовано робочий режим.\r\n");
+                return true;
+            }
+            printf("[MPU6050] Помилка запису PWR_MGMT_1, датчик лишився в режимі сну!\r\n");
         } else {
             printf("(Невірний ID, очікується 0x68)\r\n");
         }
     } else {
         printf("[MPU6050] Помилка зчитування по I2C!\r\n");
     }
+    return false;
 }
 
 bool MPU6050_ReadTemperature(float *temp_c) {

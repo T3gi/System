@@ -8,8 +8,9 @@
 #define MPU6050_REG_PWR_MGMT_1  0x6B
 #define MPU6050_REG_WHO_AM_I    0x75
 
-/* Check WHO_AM_I and wake the chip from sleep (PWR_MGMT_1 = 0). */
-void MPU6050_Init(void);
+/* Check WHO_AM_I and wake the chip from sleep (PWR_MGMT_1 = 0).
+ * true only if the ID matched and the wake-up write was acknowledged. */
+bool MPU6050_Init(void);
 
 /* Read TEMP_OUT_H/L and convert: T = raw / 340 + 36.53.  true on success. */
 bool MPU6050_ReadTemperature(float *temp_c);
