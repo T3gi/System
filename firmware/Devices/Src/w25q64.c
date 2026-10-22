@@ -54,7 +54,7 @@ static void cmd_addr(uint8_t cmd, uint32_t addr)
 
 /* --- Init ---------------------------------------------------------------- */
 
-void W25Q64_ReadID(void) {
+bool W25Q64_ReadID(void) {
     uint8_t tx_buf[4] = {CMD_JEDEC_ID, 0x00, 0x00, 0x00};
     uint8_t rx_buf[4] = {0};
 
@@ -67,9 +67,10 @@ void W25Q64_ReadID(void) {
     printf("[W25Q64] JEDEC ID: 0x%02X 0x%02X 0x%02X ", id[0], id[1], id[2]);
     if (id[0] == 0xEF && id[1] == 0x40 && id[2] == 0x17) {
         printf("(OK - W25Q64 знайдено)\r\n");
-    } else {
-        printf("(Помилка або невідомий чіп)\r\n");
+        return true;
     }
+    printf("(Помилка або невідомий чіп)\r\n");
+    return false;
 }
 
 void w25_set_speed(uint32_t br)

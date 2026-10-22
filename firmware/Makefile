@@ -37,12 +37,17 @@ BUILD_DIR = build
 # C sources
 C_SOURCES =  \
 Core/Src/main.c \
+App/Src/app.c \
+App/Src/selftest.c \
+App/Src/console.c \
+App/Src/stream.c \
 Devices/Src/w25q64.c \
 Devices/Src/mpu6050.c \
 Devices/Src/gy89.c \
 Devices/Src/i2c_scan.c \
 Devices/Src/servo.c \
 Devices/Src/ov7670.c \
+Devices/Src/ov7670_capture.c \
 Core/Src/stm32f4xx_it.c \
 Core/Src/stm32f4xx_hal_msp.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c.c \
@@ -72,7 +77,8 @@ Platform/Src/platform_spi.c \
 Platform/Src/platform_pwm.c \
 Platform/Src/platform_time.c \
 Platform/Src/platform_sccb.c \
-Platform/Src/platform_camera.c
+Platform/Src/platform_camera.c \
+Platform/Src/platform_board.c
 
 # ASM sources
 ASM_SOURCES =  \
@@ -168,8 +174,8 @@ LIBS = -lc -lm -lnosys
 LIBDIR = 
 LDFLAGS = $(MCU) -specs=nano.specs -T$(LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections
 
-# default action: build all
-all: $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).hex $(BUILD_DIR)/$(TARGET).bin
+# default action: build all (the layer rules are checked first, see check-arch)
+all: check-arch $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).hex $(BUILD_DIR)/$(TARGET).bin
 
 
 #######################################
@@ -219,13 +225,26 @@ clean:
 #######################################
 # custom architecture check
 #######################################
+# Layer rules from docs/architecture.md, section 2.  Runs before every build.
+#  1. App/ and Devices/ do not include HAL or main.h (main.h pulls in HAL).
+#  2. App/ and Devices/ do not call HAL (HAL_*, __HAL_*).
+#  3. App/ uses from Platform only the time and board services; buses and the
+#     camera port are reached through Devices.
+ARCH_HAL_INC  := \#include *[<"](stm32f4xx|main\.h)
+ARCH_HAL_CALL := \b(__)?HAL_[A-Za-z_]+ *\(
+ARCH_APP_BUS  := \#include *"platform_(i2c|spi|pwm|sccb|camera)\.h"|\b(Platform_(I2C|SPI|PWM)_|sccb_|cam_|Camera_)[A-Za-z]
+
+.PHONY: check-arch
 check-arch:
 	@echo "Checking architecture dependencies..."
-	@if grep -rn "stm32f4xx_hal" App/ Devices/ ; then \
-		echo "ERROR: Architecture violation! App/ or Devices/ includes HAL headers."; \
-		exit 1; \
-	else \
-		echo "SUCCESS: Architecture check passed."; \
-	fi
-	
+	@fail=0; \
+	if grep -rnE '$(ARCH_HAL_INC)' App/ Devices/ ; then \
+		echo "ERROR: App/ or Devices/ includes HAL headers or main.h."; fail=1; fi; \
+	if grep -rnE '$(ARCH_HAL_CALL)' App/ Devices/ ; then \
+		echo "ERROR: App/ or Devices/ calls HAL directly."; fail=1; fi; \
+	if grep -rnE '$(ARCH_APP_BUS)' App/ ; then \
+		echo "ERROR: App/ uses a Platform bus or the camera port; go through Devices/."; fail=1; fi; \
+	if [ $$fail -ne 0 ]; then exit 1; fi; \
+	echo "SUCCESS: Architecture check passed."
+
 # *** EOF ***

@@ -36,6 +36,10 @@ extern volatile uint32_t cam_last_line_min;
 extern volatile uint32_t cam_last_line_max;
 extern volatile uint32_t cam_last_short_lines;
 
+/** Start XCLK on PA8 (TIM1_CH1, PCLK2 / 4, 50 % duty).  Returns the frequency
+ *  in Hz.  The sensor does not answer on SCCB without it. */
+uint32_t Camera_XclkStart(void);
+
 /** Pulse the sensor RESET pin (PB1). */
 void Camera_HardReset(void);
 /** Set PWDN (PB2).  0 = LOW (running), 1 = HIGH (power down). */

@@ -26,6 +26,7 @@
 #ifndef INC_W25Q64_H_
 #define INC_W25Q64_H_
 
+#include <stdbool.h>
 #include <stdint.h>
 
 /* Geometry */
@@ -46,8 +47,9 @@
 /**
  * @brief Boot-time JEDEC ID check through HAL SPI2 (CubeMX settings) and
  *        print the result.  Does not touch the register-path setup below.
+ * @return true if the ID is EF 40 17 (W25Q64JV-IQ).
  */
-void W25Q64_ReadID(void);
+bool W25Q64_ReadID(void);
 
 /**
  * @brief Bring up SPI2 + CS and read the JEDEC ID.

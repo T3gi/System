@@ -7,6 +7,13 @@ UART_BAUD ?= 115200
 build:
 	$(DOCKER) make -C firmware all
 
+# Host unit tests (tests/README.md), no board needed.
+test:
+	$(DOCKER) make -C tests test
+
+coverage:
+	$(DOCKER) make -C tests coverage
+
 flash:
 	st-flash write firmware/build/firmware.bin 0x08000000
 	

@@ -3,15 +3,30 @@
 #include <stdint.h>
 #include <stdio.h>
 
-void GY89_ReadIDs(void) {
+/* Read one ID register, print it and compare it with the datasheet value.
+ * A NACKed read prints an error instead of a stale value. */
+static bool check_id(const char *label, uint8_t addr, uint8_t reg, uint8_t expected)
+{
     uint8_t id = 0;
 
-    Platform_I2C_ReadReg(LSM303D_ADDR, 0x0F, &id, 1);
-    printf("[LSM303D] WHO_AM_I: 0x%02X\r\n", id);
+    if (!Platform_I2C_ReadReg(addr, reg, &id, 1)) {
+        printf("%s Помилка зчитування по I2C!\r\n", label);
+        return false;
+    }
+    printf("%s 0x%02X ", label, id);
+    if (id != expected) {
+        printf("(Невірний ID, очікується 0x%02X)\r\n", expected);
+        return false;
+    }
+    printf("(OK)\r\n");
+    return true;
+}
 
-    Platform_I2C_ReadReg(L3GD20_ADDR, 0x0F, &id, 1);
-    printf("[L3GD20]  WHO_AM_I: 0x%02X\r\n", id);
+bool GY89_ReadIDs(void) {
+    bool ok = true;
 
-    Platform_I2C_ReadReg(BMP180_ADDR, 0xD0, &id, 1);
-    printf("[BMP180]  CHIP_ID:  0x%02X\r\n", id);
+    ok &= check_id("[LSM303D] WHO_AM_I:", LSM303D_ADDR, 0x0F, LSM303D_ID);
+    ok &= check_id("[L3GD20]  WHO_AM_I:", L3GD20_ADDR,  0x0F, L3GD20_ID);
+    ok &= check_id("[BMP180]  CHIP_ID: ", BMP180_ADDR,  0xD0, BMP180_ID);
+    return ok;
 }
