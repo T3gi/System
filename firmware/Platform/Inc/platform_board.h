@@ -9,15 +9,24 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+/** Enable the USART2 receive interrupt.  From here on received bytes are
+ *  queued in a ring buffer by the ISR instead of waiting in the data register. */
+void Platform_Console_Start(void);
+/** USART2 receive ISR body, called from USART2_IRQHandler. */
+void Platform_Console_IrqHandler(void);
+
 /** Next received console byte, or -1 if none (non-blocking). */
 int  Platform_Console_GetChar(void);
 /** Received bytes / overrun errors since boot (diagnostics for PING). */
 uint32_t Platform_Console_RxBytes(void);
 uint32_t Platform_Console_RxOverruns(void);
+/** Bytes dropped because the ring buffer was full. */
+uint32_t Platform_Console_RxDropped(void);
 
 /** true while the user button B1 is held down. */
 bool Platform_ButtonPressed(void);
 void Platform_LedToggle(void);
+void Platform_LedSet(bool on);
 
 /** Wait for the console to finish sending, then reboot the MCU. */
 void Platform_SystemReset(void);
