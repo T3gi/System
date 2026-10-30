@@ -41,6 +41,9 @@ App/Src/app.c \
 App/Src/selftest.c \
 App/Src/console.c \
 App/Src/stream.c \
+App/Src/damper.c \
+App/Src/vision.c \
+App/Src/journal.c \
 Devices/Src/w25q64.c \
 Devices/Src/mpu6050.c \
 Devices/Src/gy89.c \

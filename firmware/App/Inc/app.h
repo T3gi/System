@@ -5,10 +5,11 @@
 #ifndef APP_H
 #define APP_H
 
-/** Boot self-test, camera mode setup, READY banner. */
+/** Boot self-test, camera mode setup, journal, READY banner. */
 void App_Init(void);
 
-/** One pass of the main loop: console, B1 button, 1 s heartbeat. */
+/** One pass of the main loop: console, B1 button, temperature, camera,
+ *  LED, 1 s heartbeat. */
 void App_Poll(void);
 
 #endif /* APP_H */
