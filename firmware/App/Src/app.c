@@ -6,6 +6,7 @@
  * first checks whether its period has passed and returns at once if not.
  */
 #include "app.h"
+#include "perf.h"
 #include "selftest.h"
 #include "console.h"
 #include "damper.h"
@@ -44,6 +45,10 @@ static uint8_t  s_luma;            /* brightness of the last frame */
 static bool     s_journal_ok;
 static uint32_t s_blink_start;
 static bool     s_blinking;
+
+volatile uint32_t btn_t_event = 0;
+volatile uint8_t btn_pending = 0;
+perf_stat_t st_btn_latency = { .name = "btn_latency" };
 
 void App_Init(void)
 {
@@ -235,6 +240,24 @@ static void tick_task(void)
     print_temperature();
 }
 
+void Process_Button_Event(void)
+{
+    if (!btn_pending) {
+        return;
+    }
+    btn_pending = 0;
+
+    GPIOC->BSRR = (uint32_t)GPIO_PIN_9 << 16U;
+
+    uint32_t latency = perf_now() - btn_t_event;
+    perf_add(&st_btn_latency, latency);
+
+    printf("EVT t_us=%lu name=btn_press\r\n", (unsigned long)perf_cycles_to_us(btn_t_event));
+    printf("EVT t_us=%lu name=capture_start latency_us=%lu\r\n", 
+           (unsigned long)perf_cycles_to_us(perf_now()), 
+           (unsigned long)perf_cycles_to_us(latency));
+}
+
 void App_Poll(void)
 {
     Console_Poll();
@@ -243,4 +266,5 @@ void App_Poll(void)
     camera_task();
     led_task();
     tick_task();
+    Process_Button_Event();
 }

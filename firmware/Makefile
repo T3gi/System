@@ -157,6 +157,8 @@ ASFLAGS = $(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) -Wall -fdata-sections -ffuncti
 
 CFLAGS += $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) -Wall -Wextra -fdata-sections -ffunction-sections
 
+CFLAGS += -fstack-usage -Wstack-usage=512
+
 ifeq ($(DEBUG), 1)
 CFLAGS += -g -gdwarf-2
 endif
@@ -175,7 +177,10 @@ LDSCRIPT = STM32F411xx_FLASH.ld
 # libraries
 LIBS = -lc -lm -lnosys 
 LIBDIR = 
-LDFLAGS = $(MCU) -specs=nano.specs -T$(LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections
+LDFLAGS = $(MCU) -specs=nano.specs -u _printf_float -T$(LDSCRIPT) $(LIBDIR) $(LIBS) \
+          -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref \
+          -Wl,--gc-sections \
+          -Wl,--print-memory-usage
 
 # default action: build all (the layer rules are checked first, see check-arch)
 all: check-arch $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).hex $(BUILD_DIR)/$(TARGET).bin
@@ -249,5 +254,22 @@ check-arch:
 		echo "ERROR: App/ uses a Platform bus or the camera port; go through Devices/."; fail=1; fi; \
 	if [ $$fail -ne 0 ]; then exit 1; fi; \
 	echo "SUCCESS: Architecture check passed."
+
+#######################################
+Memory check
+#######################################
+.PHONY: mem-stats su-stats nm-stats
+
+mem-stats:
+	@echo "=== Top object files by size ==="
+	@$(SZ) $(BUILD_DIR)/*.o | sort -n -k4 | tail -15
+
+su-stats:
+	@echo "=== Worst-case stack frame sizes (.su) ==="
+	@cat $(BUILD_DIR)/*.su | sort -t $$'\t' -k2 -n | tail -15
+
+nm-stats: $(BUILD_DIR)/$(TARGET).elf
+	@echo "=== Largest symbols in RAM (.bss / .data) ==="
+	@$(PREFIX)nm --size-sort -S --radix=d $(BUILD_DIR)/$(TARGET).elf | grep -E ' [bBdD] ' | tail -15
 
 # *** EOF ***

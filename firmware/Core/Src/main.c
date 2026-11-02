@@ -23,7 +23,9 @@
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
 #include "app.h"
-#include "platform_camera.h"   /* STRIP_BYTES etc. for the boot banner */
+#include "platform_camera.h"   
+#include "perf.h"
+#include "mem_diag.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -33,7 +35,11 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define UART_BAUD  921600u
+#define PROBE0_ON()    (GPIOC->BSRR = GPIO_PIN_8)
+#define PROBE0_OFF()   (GPIOC->BSRR = (uint32_t)GPIO_PIN_8 << 16U)
 
+#define PROBE1_ON()    (GPIOC->BSRR = GPIO_PIN_9)
+#define PROBE1_OFF()   (GPIOC->BSRR = (uint32_t)GPIO_PIN_9 << 16U)
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -79,7 +85,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-
+  stack_paint();
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -105,6 +111,8 @@ int main(void)
   MX_TIM3_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
+  perf_init();
+
   setvbuf(stdout, NULL, _IONBF, 0);
   printf("hello from STM32\r\n");
   printf("\r\n========================================\r\n");
@@ -126,12 +134,32 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  perf_stat_t st_loop = { .name = "main_loop" };
+  uint32_t busy_cycles = 0;
+  uint32_t window_start = perf_now();
+
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    uint32_t t_loop_start = perf_now();
+
+    PROBE0_ON(); 
     App_Poll();
+    PROBE0_OFF();
+
+    uint32_t elapsed = perf_now() - t_loop_start;
+    perf_add(&st_loop, elapsed);
+    busy_cycles += elapsed;
+
+    uint32_t window = perf_now() - window_start;
+    if (window >= SystemCoreClock) {
+        uint32_t load_pct = (uint32_t)(((uint64_t)busy_cycles * 100u) / window);
+        printf("LOAD pct=%lu%%\r\n", (unsigned long)load_pct);
+        busy_cycles = 0;
+        window_start = perf_now();
+    }
   }
   /* USER CODE END 3 */
 }
@@ -371,6 +399,9 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1|GPIO_PIN_2, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8|GPIO_PIN_9, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
 
   /*Configure GPIO pin : B1_Pin */
@@ -407,8 +438,23 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /* USER CODE BEGIN MX_GPIO_Init_2 */
+  /*Configure GPIO pins : PC8 PC9 */
+  GPIO_InitStruct.Pin = GPIO_PIN_8|GPIO_PIN_9;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
+  /*Configure GPIO pins : PC8 PC9 */
+  GPIO_InitStruct.Pin = GPIO_PIN_8|GPIO_PIN_9;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  /* USER CODE BEGIN MX_GPIO_Init_2 */
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 1, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
   /* USER CODE END MX_GPIO_Init_2 */
 }
 
