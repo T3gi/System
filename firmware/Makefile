@@ -256,7 +256,7 @@ check-arch:
 	echo "SUCCESS: Architecture check passed."
 
 #######################################
-Memory check
+# Memory check
 #######################################
 .PHONY: mem-stats su-stats nm-stats
 
