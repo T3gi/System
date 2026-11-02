@@ -216,5 +216,20 @@ void USART2_IRQHandler(void)
 }
 
 /* USER CODE BEGIN 1 */
+#include "perf.h"
 
+extern volatile uint32_t btn_t_event;
+extern volatile uint8_t btn_pending;
+
+void EXTI15_10_IRQHandler(void)
+{
+    if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_13) != RESET) {
+        __HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_13);
+
+        btn_t_event = perf_now();
+        btn_pending = 1;
+
+        GPIOC->BSRR = GPIO_PIN_9;
+    }
+}
 /* USER CODE END 1 */
