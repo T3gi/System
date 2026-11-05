@@ -4,7 +4,8 @@
  *        brightness must stay below VISION_DARK_LEVEL for VISION_DARK_FRAMES
  *        frames in a row; the trigger then fires once and re-arms only after
  *        the picture is bright again (>= VISION_LIGHT_LEVEL), so a hand held
- *        on the lens does not keep toggling the damper.  Pure logic.
+ *        on the lens does not keep toggling the damper.  It also starts
+ *        disarmed, so a dark room at boot is not taken for a hand.  Pure logic.
  */
 #ifndef VISION_H
 #define VISION_H
@@ -20,7 +21,7 @@
 /** Mean luma of a UYVY frame (Y is every second byte, starting at index 1). */
 uint8_t Vision_MeanLuma(const uint8_t *uyvy, uint32_t bytes);
 
-/** Armed, no dark frames counted. */
+/** Disarmed until the first bright frame, no dark frames counted. */
 void Vision_Reset(void);
 
 /** Feed one frame's mean luma.  @return true once per covering of the lens. */
