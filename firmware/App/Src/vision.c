@@ -24,16 +24,17 @@ uint8_t Vision_MeanLuma(const uint8_t *uyvy, uint32_t bytes)
 
 void Vision_Reset(void)
 {
-    s_armed = true;
+    s_armed = false;
     s_dark_frames = 0;
 }
 
 bool Vision_Update(uint8_t luma)
 {
     if (!s_armed) {
-        /* Already fired: wait until the hand is taken away. */
+        /* Just started or already fired: wait for a bright picture. */
         if (luma >= VISION_LIGHT_LEVEL) {
-            Vision_Reset();
+            s_armed = true;
+            s_dark_frames = 0;
         }
         return false;
     }

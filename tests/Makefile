@@ -36,10 +36,16 @@ test_w25q64_sequence_SRC := test_w25q64_sequence.c w25q64.c mock_spi.c
 test_ov7670_SRC          := test_ov7670.c ov7670.c fake_sccb.c
 # App: the Devices layer is replaced by a stub.
 test_selftest_SRC        := test_selftest.c selftest.c stub_devices.c
+# App logic of LR3.  Pure logic needs no doubles; the journal runs on the fake
+# chip; the super loop runs over a stub, with the real damper and vision.
+test_damper_SRC          := test_damper.c damper.c
+test_vision_SRC          := test_vision.c vision.c
+test_journal_SRC         := test_journal.c journal.c stream.c w25q64.c fake_w25q64.c
+test_app_SRC             := test_app.c app.c damper.c vision.c stub_app.c
 
 TESTS := test_mpu6050 test_gy89 test_i2c_scan test_servo \
          test_w25q64 test_w25q64_sequence test_ov7670 \
-         test_selftest
+         test_selftest test_damper test_vision test_journal test_app
 
 vpath %.c . doubles vendor/unity $(FW)/Devices/Src $(FW)/App/Src
 
@@ -86,7 +92,9 @@ coverage:
 	$(MAKE) clean
 	$(MAKE) COV=1 test
 	@$(LCOV) --capture --directory $(OBJ) --output-file $(BUILD)/all.info 2>&1 | $(NOISE)
-	@$(LCOV) --extract $(BUILD)/all.info '$(FW)/Devices/*' '$(FW)/App/*' --output-file $(BUILD)/coverage.info 2>&1 | $(NOISE)
+	@$(LCOV) --extract $(BUILD)/all.info '$(FW)/Devices/*' '$(FW)/App/*' --output-file $(BUILD)/app_devices.info 2>&1 | $(NOISE)
+	@# stream.c is linked only for the journal's CRC; why: tests/README.md, section "Покриття".
+	@$(LCOV) --remove $(BUILD)/app_devices.info '*/App/Src/stream.c' --output-file $(BUILD)/coverage.info 2>&1 | $(NOISE)
 	@lcov --rc lcov_branch_coverage=1 --list $(BUILD)/coverage.info
 	@genhtml --quiet --branch-coverage --output-directory $(BUILD)/coverage $(BUILD)/coverage.info
 	@lcov --rc lcov_branch_coverage=1 --summary $(BUILD)/coverage.info 2>&1 | awk -v min=$(COVERAGE_MIN) \

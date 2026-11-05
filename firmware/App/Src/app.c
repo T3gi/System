@@ -23,13 +23,16 @@
 #include <stdio.h>
 
 #define TEMP_PERIOD_MS     1000    /* FR-01: read the temperature once a second */
-#define CAMERA_PERIOD_MS    500    /* FR-04: one frame every half second */
+#define CAMERA_PERIOD_MS    500    /* FR-04: pause between captures; a CIF frame
+                                    * comes every ~601 ms, so one capture per frame */
+#define CAMERA_STRIP_LINES    8    /* lines used for brightness: ~16 ms with IRQs off */
+#define CAMERA_ERR_BROKEN    (-7)  /* lines missing or short: not a real picture */
 #define TICK_PERIOD_MS     1000    /* heartbeat line */
 
 #define DAMPER_CLOSED_DEG     0    /* servo angle of a closed damper */
 #define DAMPER_OPEN_DEG      90    /* FR-02: open = 90 degrees */
 
-#define LED_BLINK_MS        150    /* FR-08: one blink phase after a journal write */
+#define LED_BLINK_MS        500    /* FR-08: one blink phase after a journal write */
 #define JOURNAL_BOOT_PRINT   10    /* PRD test 3: records printed at boot */
 
 static uint32_t s_last_tick;
@@ -42,6 +45,7 @@ static bool     s_temp_ok;         /* last read succeeded */
 static bool     s_camera_ok;       /* camera answered at boot */
 static int      s_camera_err;      /* last snapshot error, 0 = none */
 static uint8_t  s_luma;            /* brightness of the last frame */
+static bool     s_luma_ok;         /* the last capture gave a real frame */
 static bool     s_journal_ok;
 static uint32_t s_blink_start;
 static bool     s_blinking;
@@ -160,7 +164,12 @@ static void temp_task(void)
 }
 
 /* FR-04: take a frame.  FR-05: a hand over the lens toggles the damper
- * (and starts the FR-06 lock inside Damper_OnCameraTrigger). */
+ * (and starts the FR-06 lock inside Damper_OnCameraTrigger).
+ *
+ * Only the top lines of the frame are read: the capture runs with interrupts
+ * off, and a whole frame (~570 ms) would stop the system time and the UART.
+ * The time stamp is taken after the capture, so the next call comes shortly
+ * before the next frame instead of waiting for it most of the time. */
 static void camera_task(void)
 {
     if (!s_camera_ok) {
@@ -169,16 +178,23 @@ static void camera_task(void)
     if (Platform_GetTick() - s_last_camera < CAMERA_PERIOD_MS) {
         return;
     }
-    s_last_camera = Platform_GetTick();
 
     const ov7670_mode_t *m = ov7670_mode_info(ov7670_current_mode());
-    uint32_t short_lines = 0;
-    int got = OV7670_Snapshot(m->width, &short_lines);
+    int got = OV7670_CaptureStrip((uint32_t)m->width * 2u, 0, CAMERA_STRIP_LINES);
+    s_last_camera = Platform_GetTick();
+
+    if (got >= 0) {
+        /* Missing bytes are padded with zeros, which would look like a hand. */
+        ov7670_capture_stats_t st = OV7670_LastCapture();
+        if (st.lines != CAMERA_STRIP_LINES || st.dropouts != 0 || st.short_lines != 0) {
+            got = CAMERA_ERR_BROKEN;
+        }
+    }
     if (got < 0) {
-        /* Print the error once, not twice a second.  A console MODE other
-         * than CIF also ends up here: the snapshot needs 352x288. */
+        s_luma_ok = false;
+        /* Print the error once, not twice a second. */
         if (got != s_camera_err) {
-            printf("ERR camera snapshot ret=%d mode=%s\r\n", got, m->name);
+            printf("ERR camera frame ret=%d mode=%s\r\n", got, m->name);
         }
         s_camera_err = got;
         return;
@@ -186,6 +202,7 @@ static void camera_task(void)
     s_camera_err = 0;
 
     s_luma = Vision_MeanLuma(OV7670_Buffer(), (uint32_t)got);
+    s_luma_ok = true;
     if (Vision_Update(s_luma)) {
         Damper_OnCameraTrigger(Platform_GetTick());
         damper_changed();
@@ -228,15 +245,19 @@ static void tick_task(void)
     if (Damper_State() == DAMPER_OPEN) {
         state = "OPEN";
     }
-    printf("TICK t=%lu rx=%lu ore=%lu drop=%lu cmds=%lu damper=%s lock_s=%lu lum=%u\r\n",
+    printf("TICK t=%lu rx=%lu ore=%lu drop=%lu cmds=%lu damper=%s lock_s=%lu lum=",
            (unsigned long)s_last_tick,
            (unsigned long)Platform_Console_RxBytes(),
            (unsigned long)Platform_Console_RxOverruns(),
            (unsigned long)Platform_Console_RxDropped(),
            (unsigned long)Console_CommandCount(),
            state,
-           (unsigned long)(Damper_LockLeftMs(s_last_tick) / 1000),
-           (unsigned)s_luma);
+           (unsigned long)(Damper_LockLeftMs(s_last_tick) / 1000));
+    if (s_luma_ok) {
+        printf("%u\r\n", (unsigned)s_luma);
+    } else {
+        printf("-\r\n");       /* no frame yet: 0 would look like a dark picture */
+    }
     print_temperature();
 }
 
