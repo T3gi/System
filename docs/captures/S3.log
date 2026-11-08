@@ -1,0 +1,65 @@
+TICK t=6029 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=0 lum=92
+[MPU6050] Помилка отримання температури!
+LOAD pct=94%
+DAMPER OPEN src=TEMP t=6044
+LOAD pct=89%
+TICK t=7029 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=91
+[MPU6050] Температура: 26.36 °C
+LOAD pct=91%
+TICK t=8029 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=111
+[MPU6050] Температура: 26.31 °C
+LOAD pct=90%
+TICK t=9029 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=114
+[MPU6050] Температура: 26.41 °C
+LOAD pct=89%
+TICK t=10041 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=112
+[MPU6050] Температура: 26.36 °C
+LOAD pct=91%
+TICK t=11041 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=113
+[MPU6050] Температура: 26.45 °C
+LOAD pct=90%
+TICK t=12041 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=115
+[MPU6050] Температура: 26.41 °C
+LOAD pct=89%
+TICK t=13041 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=114
+[MPU6050] Температура: 26.45 °C
+LOAD pct=91%
+TICK t=14053 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=113
+[MPU6050] Температура: 26.36 °C
+LOAD pct=91%
+TICK t=15053 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=114
+[MPU6050] Помилка отримання температури!
+LOAD pct=90%
+TICK t=16053 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=113
+[MPU6050] Помилка отримання температури!
+LOAD pct=91%
+TICK t=17053 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=111
+[MPU6050] Помилка отримання температури!
+LOAD pct=91%
+TICK t=18065 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=113
+[MPU6050] Помилка отримання температури!
+LOAD pct=90%
+TICK t=19065 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=113
+[MPU6050] Помилка отримання температури!
+LOAD pct=91%
+TICK t=20065 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=112
+[MPU6050] Помилка отримання температури!
+LOAD pct=91%
+TICK t=21065 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=113
+[MPU6050] Помилка отримання температури!
+LOAD pct=90%
+TICK t=22077 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=112
+[MPU6050] Помилка отримання температури!
+LOAD pct=91%
+TICK t=23077 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=113
+[MPU6050] Помилка отримання температури!
+LOAD pct=91%
+TICK t=24077 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=112
+[MPU6050] Помилка отримання температури!
+LOAD pct=90%
+TICK t=25077 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=113
+[MPU6050] Помилка отримання температури!
+LOAD pct=91%
+TICK t=26089 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=112
+[MPU6050] Помилка отримання температури!
+LOAD pct=90%
