@@ -1,0 +1,86 @@
+TICK t=7028 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=109
+[MPU6050] Температура: 26.03 °C
+LOAD pct=91%
+TICK t=8028 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=108
+[MPU6050] Температура: 26.17 °C
+LOAD pct=90%
+TICK t=9028 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=108
+[MPU6050] Температура: 26.08 °C
+LOAD pct=89%
+TICK t=10040 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=107
+[MPU6050] Температура: 26.08 °C
+LOAD pct=91%
+TICK t=11040 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=107
+[MPU6050] Температура: 26.12 °C
+LOAD pct=91%
+TICK t=12040 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=177
+[MPU6050] Температура: 26.08 °C
+LOAD pct=89%
+DAMPER CLOSED src=CAMERA t=12971
+TICK t=13040 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=299 lum=17
+[MPU6050] Температура: 26.08 °C
+LOAD pct=91%
+TICK t=14040 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=298 lum=15
+[MPU6050] Температура: 25.98 °C
+LOAD pct=91%
+TICK t=15040 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=297 lum=154
+[MPU6050] Температура: 26.12 °C
+LOAD pct=89%
+TICK t=16040 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=296 lum=190
+[MPU6050] Температура: 26.03 °C
+LOAD pct=91%
+TICK t=17040 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=295 lum=182
+[MPU6050] Температура: 26.03 °C
+LOAD pct=91%
+TICK t=18040 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=294 lum=160
+[MPU6050] Температура: 26.03 °C
+LOAD pct=89%
+TICK t=19040 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=293 lum=132
+[MPU6050] Температура: 26.08 °C
+LOAD pct=91%
+TICK t=20040 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=292 lum=95
+[MPU6050] Температура: 26.08 °C
+LOAD pct=91%
+TICK t=21040 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=291 lum=99
+[MPU6050] Температура: 26.03 °C
+LOAD pct=89%
+TICK t=22040 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=290 lum=99
+[MPU6050] Температура: 26.03 °C
+LOAD pct=91%
+TICK t=23040 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=289 lum=103
+[MPU6050] Температура: 26.03 °C
+LOAD pct=91%
+TICK t=24040 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=288 lum=105
+[MPU6050] Температура: 26.12 °C
+LOAD pct=89%
+TICK t=25040 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=287 lum=108
+[MPU6050] Температура: 26.08 °C
+LOAD pct=91%
+TICK t=26040 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=286 lum=111
+[MPU6050] Температура: 26.08 °C
+LOAD pct=91%
+TICK t=27040 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=285 lum=112
+[MPU6050] Температура: 26.08 °C
+LOAD pct=89%
+TICK t=28040 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=284 lum=113
+[MPU6050] Температура: 26.08 °C
+LOAD pct=91%
+LOAD pct=91%
+TICK t=29040 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=283 lum=113
+[MPU6050] Температура: 26.08 °C
+LOAD pct=89%
+TICK t=30040 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=282 lum=113
+[MPU6050] Температура: 26.03 °C
+LOAD pct=91%
+TICK t=31040 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=281 lum=113
+[MPU6050] Температура: 26.03 °C
+LOAD pct=91%
+TICK t=32040 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=280 lum=113
+[MPU6050] Температура: 26.08 °C
+LOAD pct=89%
+TICK t=33040 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=279 lum=113
+[MPU6050] Температура: 26.03 °C
+LOAD pct=91%
+TICK t=34040 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=278 lum=113
+[MPU6050] Температура: 26.08 °C
+LOAD pct=91%
