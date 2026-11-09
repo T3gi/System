@@ -1,0 +1,296 @@
+# fw 9593d60 2026-11-09 20:26:46 run_i2c_recovery
+picocom v3.1
+
+port is        : /dev/ttyACM0
+flowcontrol    : none
+baudrate is    : 115200
+parity is      : none
+databits are   : 8
+stopbits are   : 1
+escape is      : C-a
+local echo is  : no
+noinit is      : no
+noreset is     : no
+hangup is      : no
+nolock is      : no
+send_cmd is    : sz -vv
+receive_cmd is : rz -vv -E
+imap is        : lfcrlf,
+omap is        : 
+emap is        : crcrlf,delbs,
+logfile is     : none
+initstring     : none
+exit_after is  : not set
+exit is        : no
+
+Type [C-a] [C-h] to see available commands
+Terminal ready
+TICK t=3290014 rx=175 ore=0 drop=0 cmds=20 damper=OPEN lock_s=0 lum=64
+[MPU6050] Температура: 26.64 °C
+LOAD pct=89%
+TICK t=3291026 rx=175 ore=0 drop=0 cmds=20 damper=OPEN lock_s=0 lum=61
+[MPU6050] Температура: 26.74 °C
+LOAD pct=91%
+TICK t=3292026 rx=175 ore=0 drop=0 cmds=20 damper=OPEN lock_s=0 lum=66
+[MPU6050] Температура: 26.78 °C
+hello from STM32
+
+========================================
+ STM32F411RE + OV7670 strip-capture rig [lab2-sccb-hal]
+ SYSCLK=84000000 HCLK=84000000 PCLK1=42000000 PCLK2=84000000
+ Build = Nov  5 2026 07:55:13   UART = 921600 8N1 (fixed)
+ Strip buffer = 41984 bytes (32 lines x 1312 max)
+========================================
+
+=== Запуск перевірки компонентів ===
+Сканування шини I2C1...
+ Знайдено пристрій за адресою: 0x1D
+ Знайдено пристрій за адресою: 0x68
+ Знайдено пристрій за адресою: 0x6B
+ Знайдено пристрій за адресою: 0x77
+Сканування завершено. Знайдено пристроїв: 4
+[W25Q64] JEDEC ID: 0xEF 0x40 0x17 (OK - W25Q64 знайдено)
+SELFTEST W25Q64 OK
+[MPU6050] WHO_AM_I: 0x68 (OK)
+[MPU6050] Прокинуто, активовано робочий режим.
+SELFTEST MPU6050 OK
+[LSM303D] WHO_AM_I: 0x49 (OK)
+[L3GD20]  WHO_AM_I: 0xD4 (OK)
+[BMP180]  CHIP_ID:  0x55 (OK)
+SELFTEST GY89 OK
+===================================
+>> XCLK = 21000000 Hz on PA8 (TIM1_CH1, 50% duty)
+>> SCCB backend = HAL (Mem_Write + Transmit/Receive)
+>> SCCB probe #0: PID=118(0x76) VER=115(0x73) halerr=0x0  [OV7670 OK]
+SELFTEST OV7670 OK
+SELFTEST SUMMARY 4/4 OK
+JOURNAL records=58 bad=32 next_seq=50
+LOG seq=25 t=6347 state=OPEN src=TEMP temp=26.31
+LOG seq=47 t=6276 state=OPEN src=TEMP temp=26.36
+LOG seq=48 t=60601 state=CLOSED src=CAMERA temp=26.45
+LOG seq=49 t=361145 state=OPEN src=TEMP temp=26.50
+MODE 1 CIF nominal=352x288 window=h[170..90] v[14..494]
+READY
+COMMANDS
+  PING                       -> PONG
+  ID                         read PID/VER over SCCB
+  MODE <n>                   0=VGA 1=CIF 2=QVGA 3=QCIF_BUILTIN
+                             4=QCIF_LINUX 5=CIF_FULLWIN 6=QVGA_FULLWIN
+                             7=VGA_FULLARRAY 656x488
+  MODES                      list modes
+  PROBE                      measure real HREF/PCLK geometry
+  FREEZE | AUTO              latch / release AEC+AGC+AWB
+  RD <reg>                   read register (hex)
+  SCCB [n] [attempts]        select back-end 0=HAL 1=HAL_MEM 2=BITBANG
+  SCCBTEST [n|-1] [reads] [attempts] [stopwait]  reliability test
+  WR <reg> <val>             write register (hex)
+  WIN <hs> <he> <vs> <ve>    set hardware window (decimal)
+  SNAP                       ONE frame, 2x2 averaged -> 176x144
+  FRAME [lineBytes] [lines] [verify]  capture+stream a whole frame
+  STRIP <lineBytes> <start> <lines>   capture + base64 one strip
+  DUP <lineBytes>            report duplicate-line distance
+  WARM <n>                   discard n frames
+  -- W25Q64 SPI flash on SPI2 (CS=PB12 SCK=PB13 MISO=PB14 MOSI=PB15) --
+  FINIT [0..7]               bring up SPI2 (0=21MHz .. 4=1.3MHz, default 4)
+  FID | FSTATUS | FSPEED <n> JEDEC id / status / clock
+  FTEST [addr]               erase+program+verify one page
+  FERASE [blocks]            erase N x 64KB (VGA frame needs 10)
+  FDUMP [addr] [len]         hex dump
+  FLASHREAD <addr> <len>     stream a range base64+CRC
+  RESET                      reboot the MCU
+OK
+TICK t=6162 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=0 lum=17
+[MPU6050] Помилка отримання температури!
+LOAD pct=94%
+DAMPER OPEN src=TEMP t=6177
+LOAD pct=91%
+TICK t=7162 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=17
+[MPU6050] Температура: 26.74 °C
+LOAD pct=92%
+TICK t=8162 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=19
+[MPU6050] Температура: 26.83 °C
+LOAD pct=91%
+TICK t=9162 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=19
+[MPU6050] Температура: 26.88 °C
+LOAD pct=89%
+TICK t=10174 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=22
+[MPU6050] Температура: 26.92 °C
+LOAD pct=91%
+TICK t=11174 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=23
+[MPU6050] Температура: 26.83 °C
+LOAD pct=90%
+TICK t=12174 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=24
+[MPU6050] Температура: 26.83 °C
+LOAD pct=89%
+TICK t=13174 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=24
+[MPU6050] Температура: 26.88 °C
+LOAD pct=91%
+TICK t=14186 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=25
+[MPU6050] Температура: 26.92 °C
+LOAD pct=90%
+TICK t=15186 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=27
+[MPU6050] Температура: 27.02 °C
+LOAD pct=89%
+TICK t=16186 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=34
+[MPU6050] Температура: 26.92 °C
+LOAD pct=91%
+TICK t=17186 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=41
+[MPU6050] Температура: 26.83 °C
+LOAD pct=90%
+TICK t=18198 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=87
+[MPU6050] Температура: 26.92 °C
+LOAD pct=89%
+TICK t=19198 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=83
+[MPU6050] Температура: 26.92 °C
+LOAD pct=91%
+TICK t=20198 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=61
+[MPU6050] Температура: 26.88 °C
+LOAD pct=90%
+TICK t=21198 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=63
+[MPU6050] Температура: 26.83 °C
+LOAD pct=89%
+TICK t=22210 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=52
+[MPU6050] Температура: 26.88 °C
+LOAD pct=91%
+TICK t=23210 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=25
+[MPU6050] Температура: 26.88 °C
+DAMPER CLOSED src=CAMERA t=23356
+LOAD pct=90%
+TICK t=24210 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=299 lum=15
+[MPU6050] Температура: 26.92 °C
+LOAD pct=91%
+TICK t=25210 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=298 lum=14
+[MPU6050] Температура: 26.88 °C
+LOAD pct=92%
+TICK t=26221 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=297 lum=14
+[MPU6050] Температура: 26.83 °C
+LOAD pct=91%
+LOAD pct=91%
+TICK t=27221 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=296 lum=220
+[MPU6050] Температура: 26.88 °C
+DAMPER OPEN src=CAMERA t=28095
+LOAD pct=91%
+TICK t=28221 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=299 lum=24
+[MPU6050] Температура: 26.97 °C
+LOAD pct=92%
+TICK t=29318 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=298 lum=47
+[MPU6050] Температура: 26.97 °C
+LOAD pct=92%
+TICK t=30318 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=297 lum=14
+[MPU6050] Температура: 26.92 °C
+DAMPER CLOSED src=CAMERA t=30472
+LOAD pct=90%
+TICK t=31318 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=299 lum=225
+[MPU6050] Температура: 26.88 °C
+LOAD pct=95%
+TICK t=32318 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=298 lum=214
+[MPU6050] Помилка отримання температури!
+LOAD pct=91%
+DAMPER OPEN src=CAMERA t=33015
+TICK t=33318 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=299 lum=15
+[MPU6050] Помилка отримання температури!
+ERR camera frame ret=-7 mode=CIF
+LOAD pct=92%
+TICK t=34318 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=298 lum=20
+[MPU6050] Помилка отримання температури!
+LOAD pct=94%
+ERR camera frame ret=-7 mode=CIF
+TICK t=35318 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=297 lum=-
+[MPU6050] Помилка отримання температури!
+LOAD pct=90%
+TICK t=36318 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=296 lum=19
+[MPU6050] Помилка отримання температури!
+LOAD pct=93%
+TICK t=37318 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=295 lum=45
+[MPU6050] Помилка отримання температури!
+LOAD pct=91%
+TICK t=38318 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=294 lum=53
+[MPU6050] Помилка отримання температури!
+LOAD pct=90%
+TICK t=39366 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=293 lum=55
+[MPU6050] Помилка отримання температури!
+LOAD pct=91%
+ERR camera frame ret=-7 mode=CIF
+TICK t=40366 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=292 lum=-
+[MPU6050] Помилка отримання температури!
+LOAD pct=89%
+TICK t=41366 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=291 lum=-
+[MPU6050] Помилка отримання температури!
+LOAD pct=92%
+TICK t=42366 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=290 lum=16
+[MPU6050] Помилка отримання температури!
+LOAD pct=90%
+TICK t=43366 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=289 lum=12
+[MPU6050] Помилка отримання температури!
+LOAD pct=91%
+TICK t=44366 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=288 lum=42
+[MPU6050] Помилка отримання температури!
+LOAD pct=91%
+TICK t=45366 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=287 lum=15
+[MPU6050] Помилка отримання температури!
+LOAD pct=90%
+TICK t=47128 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=285 lum=247
+[MPU6050] Помилка отримання температури!
+LOAD pct=98%
+LOAD pct=89%
+TICK t=48128 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=284 lum=18
+[MPU6050] Помилка отримання температури!
+DAMPER CLOSED src=CAMERA t=48274
+LOAD pct=92%
+TICK t=49128 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=299 lum=13
+[MPU6050] Помилка отримання температури!
+LOAD pct=92%
+TICK t=50128 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=298 lum=11
+[MPU6050] Помилка отримання температури!
+LOAD pct=90%
+TICK t=51140 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=297 lum=20
+[MPU6050] Помилка отримання температури!
+LOAD pct=91%
+TICK t=52140 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=296 lum=17
+[MPU6050] Помилка отримання температури!
+LOAD pct=91%
+TICK t=53140 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=295 lum=29
+[MPU6050] Помилка отримання температури!
+LOAD pct=90%
+TICK t=54140 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=294 lum=20
+[MPU6050] Помилка отримання температури!
+LOAD pct=91%
+TICK t=55152 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=293 lum=18
+[MPU6050] Помилка отримання температури!
+LOAD pct=91%
+TICK t=56152 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=292 lum=22
+[MPU6050] Помилка отримання температури!
+LOAD pct=90%
+TICK t=57152 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=291 lum=27
+[MPU6050] Помилка отримання температури!
+LOAD pct=91%
+TICK t=58152 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=290 lum=15
+[MPU6050] Помилка отримання температури!
+LOAD pct=91%
+TICK t=59164 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=289 lum=13
+[MPU6050] Помилка отримання температури!
+LOAD pct=90%
+TICK t=60164 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=288 lum=11
+[MPU6050] Помилка отримання температури!
+LOAD pct=91%
+TICK t=61164 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=287 lum=11
+[MPU6050] Помилка отримання температури!
+LOAD pct=91%
+TICK t=62164 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=286 lum=13
+[MPU6050] Помилка отримання температури!
+LOAD pct=90%
+TICK t=63176 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=285 lum=18
+[MPU6050] Помилка отримання температури!
+LOAD pct=91%
+TICK t=64176 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=284 lum=19
+[MPU6050] Помилка отримання температури!
+LOAD pct=91%
+TICK t=65176 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=283 lum=19
+[MPU6050] Помилка отримання температури!
+LOAD pct=90%
+TICK t=66176 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=282 lum=15
+[MPU6050] Помилка отримання температури!
+LOAD pct=91%
+
+Terminating...
+Thanks for using picocom
