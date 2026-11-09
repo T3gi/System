@@ -1,0 +1,158 @@
+# fw 9593d60 2026-11-09 20:31:42 run_reset
+picocom v3.1
+
+port is        : /dev/ttyACM0
+flowcontrol    : none
+baudrate is    : 115200
+parity is      : none
+databits are   : 8
+stopbits are   : 1
+escape is      : C-a
+local echo is  : no
+noinit is      : no
+noreset is     : no
+hangup is      : no
+nolock is      : no
+send_cmd is    : sz -vv
+receive_cmd is : rz -vv -E
+imap is        : lfcrlf,
+omap is        : 
+emap is        : crcrlf,delbs,
+logfile is     : none
+initstring     : none
+exit_after is  : not set
+exit is        : no
+
+Type [C-a] [C-h] to see available commands
+Terminal ready
+rLOAD pct=90%
+TICK t=280831 rx=2 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=67 lum=9
+[MPU6050] Помилка отримання температури!
+LOAD pct=91%
+TICK t=281831 rx=2 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=66 lum=9
+[MPU6050] Помилка отримання температури!
+LOAD pct=91%
+TICK t=282831 rx=2 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=65 lum=9
+[MPU6050] Помилка отримання температури!
+LOAD pct=90%
+TICK t=283843 rx=2 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=64 lum=9
+[MPU6050] Помилка отримання температури!
+CMD []
+LOAD pct=91%
+TICK t=284843 rx=5 ore=0 drop=0 cmds=1 damper=CLOSED lock_s=63 lum=9
+[MPU6050] Помилка отримання температури!
+LOAD pct=91%
+TICK t=285843 rx=5 ore=0 drop=0 cmds=1 damper=CLOSED lock_s=62 lum=9
+[MPU6050] Помилка отримання температури!
+LOAD pct=90%
+TICK t=286843 rx=5 ore=0 drop=0 cmds=1 damper=CLOSED lock_s=61 lum=9
+[MPU6050] Помилка отримання температури!
+LOAD pct=91%
+TICK t=287855 rx=5 ore=0 drop=0 cmds=1 damper=CLOSED lock_s=60 lum=9
+[MPU6050] Помилка отримання температури!
+LOAD pct=91%
+LOAD pct=90%
+TICK t=288855 rx=5 ore=0 drop=0 cmds=1 damper=CLOSED lock_s=59 lum=9
+[MPU6050] Помилка отримання температури!
+LOAD pct=91%
+TICK t=289855 rx=5 ore=0 drop=0 cmds=1 damper=CLOSED lock_s=58 lum=9
+[MPU6050] Помилка отримання температури!
+LOAD pct=91%
+TICK t=290855 rx=5 ore=0 drop=0 cmds=1 damper=CLOSED lock_s=57 lum=9
+[MPU6050] Помилка отримання температури!
+LOAD pct=90%
+TICK t=291867 rx=5 ore=0 drop=0 cmds=1 damper=CLOSED lock_s=56 lum=9
+[MPU6050] Помилка отримання температури!
+LOAD pct=91%
+TICK t=292867 rx=5 ore=0 drop=0 cmds=1 damper=CLOSED lock_s=55 lum=8
+[MPU6050] Помилка отримання температури!
+hello from STM32
+
+========================================
+ STM32F411RE + OV7670 strip-capture rig [lab2-sccb-hal]
+ SYSCLK=84000000 HCLK=84000000 PCLK1=42000000 PCLK2=84000000
+ Build = Nov  5 2026 07:55:13   UART = 921600 8N1 (fixed)
+ Strip buffer = 41984 bytes (32 lines x 1312 max)
+========================================
+
+=== Запуск перевірки компонентів ===
+Сканування шини I2C1...
+ Знайдено пристрій за адресою: 0x1D
+ Знайдено пристрій за адресою: 0x68
+ Знайдено пристрій за адресою: 0x6B
+ Знайдено пристрій за адресою: 0x77
+Сканування завершено. Знайдено пристроїв: 4
+[W25Q64] JEDEC ID: 0xEF 0x40 0x17 (OK - W25Q64 знайдено)
+SELFTEST W25Q64 OK
+[MPU6050] WHO_AM_I: 0x68 (OK)
+[MPU6050] Прокинуто, активовано робочий режим.
+SELFTEST MPU6050 OK
+[LSM303D] WHO_AM_I: 0x49 (OK)
+[L3GD20]  WHO_AM_I: 0xD4 (OK)
+[BMP180]  CHIP_ID:  0x55 (OK)
+SELFTEST GY89 OK
+===================================
+>> XCLK = 21000000 Hz on PA8 (TIM1_CH1, 50% duty)
+>> SCCB backend = HAL (Mem_Write + Transmit/Receive)
+>> SCCB probe #0: PID=118(0x76) VER=115(0x73) halerr=0x0  [OV7670 OK]
+SELFTEST OV7670 OK
+SELFTEST SUMMARY 4/4 OK
+JOURNAL records=48 bad=608 next_seq=56
+LOG seq=7 t=37627 state=OPEN src=TEMP temp=26.03
+LOG seq=9 t=11218 state=CLOSED src=CAMERA temp=26.55
+MODE 1 CIF nominal=352x288 window=h[170..90] v[14..494]
+READY
+COMMANDS
+  PING                       -> PONG
+  ID                         read PID/VER over SCCB
+  MODE <n>                   0=VGA 1=CIF 2=QVGA 3=QCIF_BUILTIN
+                             4=QCIF_LINUX 5=CIF_FULLWIN 6=QVGA_FULLWIN
+                             7=VGA_FULLARRAY 656x488
+  MODES                      list modes
+  PROBE                      measure real HREF/PCLK geometry
+  FREEZE | AUTO              latch / release AEC+AGC+AWB
+  RD <reg>                   read register (hex)
+  SCCB [n] [attempts]        select back-end 0=HAL 1=HAL_MEM 2=BITBANG
+  SCCBTEST [n|-1] [reads] [attempts] [stopwait]  reliability test
+  WR <reg> <val>             write register (hex)
+  WIN <hs> <he> <vs> <ve>    set hardware window (decimal)
+  SNAP                       ONE frame, 2x2 averaged -> 176x144
+  FRAME [lineBytes] [lines] [verify]  capture+stream a whole frame
+  STRIP <lineBytes> <start> <lines>   capture + base64 one strip
+  DUP <lineBytes>            report duplicate-line distance
+  WARM <n>                   discard n frames
+  -- W25Q64 SPI flash on SPI2 (CS=PB12 SCK=PB13 MISO=PB14 MOSI=PB15) --
+  FINIT [0..7]               bring up SPI2 (0=21MHz .. 4=1.3MHz, default 4)
+  FID | FSTATUS | FSPEED <n> JEDEC id / status / clock
+  FTEST [addr]               erase+program+verify one page
+  FERASE [blocks]            erase N x 64KB (VGA frame needs 10)
+  FDUMP [addr] [len]         hex dump
+  FLASHREAD <addr> <len>     stream a range base64+CRC
+  RESET                      reboot the MCU
+OK
+TICK t=6325 rx=0 ore=0 drop=0 cmds=0 damper=CLOSED lock_s=0 lum=16
+[MPU6050] Помилка отримання температури!
+LOAD pct=94%
+DAMPER OPEN src=TEMP t=6340
+LOAD pct=91%
+TICK t=7325 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=18
+[MPU6050] Температура: 27.49 °C
+LOAD pct=92%
+TICK t=8325 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=15
+[MPU6050] Температура: 27.44 °C
+LOAD pct=91%
+TICK t=9325 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=15
+[MPU6050] Температура: 27.49 °C
+LOAD pct=89%
+TICK t=10336 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=14
+[MPU6050] Температура: 27.40 °C
+LOAD pct=91%
+TICK t=11336 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=13
+[MPU6050] Температура: 27.54 °C
+LOAD pct=90%
+TICK t=12336 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=13
+[MPU6050] Температура: 27.35 °C
+LOAD pct=89%
+
+Terminating...
+Thanks for using picocom
