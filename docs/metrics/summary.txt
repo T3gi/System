@@ -1,0 +1,63 @@
+== docs/metrics/run_btn.log
+  # fw 9593d60 2026-11-09 20:02:45 run_btn
+  TICK: 112 рядків, відрізків між перезапусками: 1
+  період TICK: n=111 min=1000 avg=3683.3 median=1000 p99=31164 max=31306 мс
+  джитер TICK: max=+30306 мс, пропущених запусків (>2 періодів): 10
+  затримка кнопки (DWT), усі: n=20 min=0.0 avg=8180.5 median=3785.15 p99=19548.7 max=19548.7 мс
+    з них < 1 с (звичайна робота): n=10 min=0.0 avg=6.1 median=0.0015 p99=61.092 max=61.092 мс
+    з них >= 1 с (під час передачі): n=10 min=7509 avg=16354.8 median=17640.5 p99=19549 max=19549 мс
+  LOAD: n=117 min=89 avg=90.8 median=90 p99=99 max=99 %
+  температура: OK=113 помилок=0
+  UART RX: ore=0 drop=0 (останній TICK)
+== docs/metrics/run_i2c_recovery.log
+  # fw 9593d60 2026-11-09 20:26:46 run_i2c_recovery
+  TICK: 63 рядків, відрізків між перезапусками: 2
+  перезапуск: перший TICK t=6162 мс -> READY ≈ 5162 мс після Reset
+  період TICK: n=61 min=1000 avg=1016.8 median=1000 p99=1097 max=1762 мс
+  джитер TICK: max=+762 мс, пропущених запусків (>2 періодів): 0
+  затримка кнопки (DWT), усі: немає даних
+    з них < 1 с (звичайна робота): немає даних
+    з них >= 1 с (під час передачі): немає даних
+  LOAD: n=65 min=89 avg=90.9 median=91 p99=95 max=98 %
+  температура: OK=28 помилок=35
+  UART RX: ore=0 drop=0 (останній TICK)
+  DAMPER OPEN src=TEMP t=6177
+  DAMPER CLOSED src=CAMERA t=23356
+  DAMPER OPEN src=CAMERA t=28095
+  DAMPER CLOSED src=CAMERA t=30472
+  DAMPER OPEN src=CAMERA t=33015
+  DAMPER CLOSED src=CAMERA t=48274
+  JOURNAL records=58 bad=32 next_seq=50
+  LOG seq=25 t=6347 state=OPEN src=TEMP temp=26.31
+  LOG seq=47 t=6276 state=OPEN src=TEMP temp=26.36
+  LOG seq=48 t=60601 state=CLOSED src=CAMERA temp=26.45
+  LOG seq=49 t=361145 state=OPEN src=TEMP temp=26.50
+== docs/metrics/run_long_1h.log
+  # fw 9593d60 2026-11-09 20:40:28 run_long_1h
+  TICK: 3596 рядків, відрізків між перезапусками: 1
+  період TICK: n=3595 min=1000 avg=1003.0 median=1000 p99=1012 max=1034 мс
+  джитер TICK: max=+34 мс, пропущених запусків (>2 періодів): 0
+  затримка кнопки (DWT), усі: немає даних
+    з них < 1 с (звичайна робота): немає даних
+    з них >= 1 с (під час передачі): немає даних
+  LOAD: n=3775 min=89 avg=90.0 median=90 p99=91 max=92 %
+  температура: OK=3596 помилок=0
+  UART RX: ore=0 drop=0 (останній TICK)
+  DAMPER CLOSED src=CAMERA t=546225
+  DAMPER OPEN src=TEMP t=846832
+== docs/metrics/run_reset.log
+  # fw 9593d60 2026-11-09 20:31:42 run_reset
+  TICK: 20 рядків, відрізків між перезапусками: 2
+  перезапуск: перший TICK t=6325 мс -> READY ≈ 5325 мс після Reset
+  період TICK: n=18 min=1000 avg=1002.6 median=1000.0 p99=1012 max=1012 мс
+  джитер TICK: max=+12 мс, пропущених запусків (>2 періодів): 0
+  затримка кнопки (DWT), усі: немає даних
+    з них < 1 с (звичайна робота): немає даних
+    з них >= 1 с (під час передачі): немає даних
+  LOAD: n=21 min=89 avg=90.8 median=91 p99=94 max=94 %
+  температура: OK=6 помилок=14
+  UART RX: ore=0 drop=0 (останній TICK)
+  DAMPER OPEN src=TEMP t=6340
+  JOURNAL records=48 bad=608 next_seq=56
+  LOG seq=7 t=37627 state=OPEN src=TEMP temp=26.03
+  LOG seq=9 t=11218 state=CLOSED src=CAMERA temp=26.55

@@ -1,0 +1,56 @@
+docker run --rm -v /mnt/c/mine/KPI/7sem/system/System:/workspace -w /workspace --user 1000:1000 stm32-build make -C firmware all
+make: Entering directory '/workspace/firmware'
+Checking architecture dependencies...
+SUCCESS: Architecture check passed.
+make: Leaving directory '/workspace/firmware'
+   text	   data	    bss	    dec	    hex	filename
+  60552	    512	  54664	 115728	  1c410	firmware/build/firmware.elf
+make: Entering directory '/workspace/firmware'
+=== Top object files by size ===
+   1329	      4	      0	   1333	    535	build/ov7670.o
+   1490	      0	      0	   1490	    5d2	build/ov7670_capture.o
+   1774	     24	     36	   1834	    72a	build/app.o
+   1912	      0	      0	   1912	    778	build/stm32f4xx_hal_dma.o
+   1650	      0	    388	   2038	    7f6	build/main.o
+   2138	      0	      0	   2138	    85a	build/stm32f4xx_hal_rcc.o
+   2043	      8	    109	   2160	    870	build/platform_sccb.o
+   3986	      0	      0	   3986	    f92	build/stm32f4xx_hal_dma_ex.o
+   5572	      0	      0	   5572	   15c4	build/stm32f4xx_hal_tim_ex.o
+   5906	      0	      0	   5906	   1712	build/stm32f4xx_hal_uart.o
+   6290	      0	      0	   6290	   1892	build/stm32f4xx_hal_spi.o
+   7063	      0	    108	   7171	   1c03	build/console.o
+  14102	      0	      0	  14102	   3716	build/stm32f4xx_hal_tim.o
+  16724	      0	      0	  16724	   4154	build/stm32f4xx_hal_i2c.o
+   1620	      0	  52116	  53736	   d1e8	build/platform_camera.o
+=== Largest symbols in RAM (.bss / .data) ===
+536872136 00000024 b s_st
+536871376 00000024 D st_btn_latency
+536871636 00000072 B htim1
+536871708 00000072 B htim3
+536871780 00000072 B huart2
+536871464 00000084 B hi2c1
+536872052 00000084 b s_hi2c
+536871548 00000088 B hspi2
+536871900 00000096 b buf.0
+536870916 00000096 d impure_data
+536924292 00000256 b s_rx_ring
+536871012 00000364 D __global_locale
+536872160 00000704 b acc.0
+536923572 00000704 b raw.1
+536872864 00050688 B cam_framebuffer
+make: Leaving directory '/workspace/firmware'
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c.c:2626:19:HAL_I2C_Mem_Read	56	static
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c.c:3236:19:HAL_I2C_Mem_Read_DMA	56	static
+Platform/Src/platform_spi.c:54:6:Platform_SPI_RegInit	56	static
+App/Src/console.c:22:13:send_strip_named	64	static
+Core/Src/main.c:290:13:MX_TIM3_Init	64	static
+Core/Src/main.c:382:13:MX_GPIO_Init	64	static
+Devices/Src/ov7670.c:61:6:ov7670_configure	64	static
+Platform/Src/platform_camera.c:16:10:Camera_XclkStart	72	static
+Core/Src/main.c:171:6:SystemClock_Config	88	static
+Devices/Src/ov7670_capture.c:106:13:bus_test_backend	112	static
+App/Src/stream.c:20:6:Stream_SendB64	136	static
+App/Src/journal.c:179:6:Journal_PrintLast	248	static
+App/Src/journal.c:56:6:Journal_Init	296	static
+App/Src/console.c:134:6:Console_Handle	360	static
+Devices/Src/w25q64.c:197:5:w25_self_test	528	static
