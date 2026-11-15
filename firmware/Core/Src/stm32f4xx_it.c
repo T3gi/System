@@ -139,18 +139,7 @@ void UsageFault_Handler(void)
   }
 }
 
-/**
-  * @brief This function handles System service call via SWI instruction.
-  */
-void SVC_Handler(void)
-{
-  /* USER CODE BEGIN SVCall_IRQn 0 */
-
-  /* USER CODE END SVCall_IRQn 0 */
-  /* USER CODE BEGIN SVCall_IRQn 1 */
-
-  /* USER CODE END SVCall_IRQn 1 */
-}
+/* SVC_Handler: provided by the FreeRTOS port (FreeRTOSConfig.h maps it). */
 
 /**
   * @brief This function handles Debug monitor.
@@ -165,32 +154,9 @@ void DebugMon_Handler(void)
   /* USER CODE END DebugMonitor_IRQn 1 */
 }
 
-/**
-  * @brief This function handles Pendable request for system service.
-  */
-void PendSV_Handler(void)
-{
-  /* USER CODE BEGIN PendSV_IRQn 0 */
+/* PendSV_Handler: provided by the FreeRTOS port (FreeRTOSConfig.h maps it). */
 
-  /* USER CODE END PendSV_IRQn 0 */
-  /* USER CODE BEGIN PendSV_IRQn 1 */
-
-  /* USER CODE END PendSV_IRQn 1 */
-}
-
-/**
-  * @brief This function handles System tick timer.
-  */
-void SysTick_Handler(void)
-{
-  /* USER CODE BEGIN SysTick_IRQn 0 */
-
-  /* USER CODE END SysTick_IRQn 0 */
-  HAL_IncTick();
-  /* USER CODE BEGIN SysTick_IRQn 1 */
-
-  /* USER CODE END SysTick_IRQn 1 */
-}
+/* SysTick_Handler: provided by the FreeRTOS port (FreeRTOSConfig.h maps it). */
 
 /******************************************************************************/
 /* STM32F4xx Peripheral Interrupt Handlers                                    */
@@ -220,6 +186,7 @@ void USART2_IRQHandler(void)
 
 extern volatile uint32_t btn_t_event;
 extern volatile uint8_t btn_pending;
+void AppRtos_ButtonFromISR(void);
 
 void EXTI15_10_IRQHandler(void)
 {
@@ -230,6 +197,9 @@ void EXTI15_10_IRQHandler(void)
         btn_pending = 1;
 
         GPIOC->BSRR = GPIO_PIN_9;
+
+        /* LR4: wake the button task; it clears PC9 and reports the latency. */
+        AppRtos_ButtonFromISR();
     }
 }
 /* USER CODE END 1 */

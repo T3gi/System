@@ -5,6 +5,7 @@
  */
 #include "platform_sccb.h"
 #include "stm32f4xx_hal.h"
+#include "platform_rtos.h"
 
 #define SCL_PIN        GPIO_PIN_8
 #define SDA_PIN        GPIO_PIN_9
@@ -250,7 +251,28 @@ const char *sccb_backend_name(sccb_backend_t b)
 
 void sccb_set_attempts(int n) { s_attempts = (n < 1) ? 1 : n; }
 
+static int sccb_read_reg_locked(uint8_t slave7, uint8_t reg);
+static int sccb_write_reg_locked(uint8_t slave7, uint8_t reg, uint8_t val);
+
+/* LR4: SCCB shares I2C1 with the MPU6050 and GY-89, so every transfer holds
+ * the I2C bus lock. */
 int sccb_read_reg(uint8_t slave7, uint8_t reg)
+{
+    Platform_BusLock(PLATFORM_BUS_I2C);
+    int v = sccb_read_reg_locked(slave7, reg);
+    Platform_BusUnlock(PLATFORM_BUS_I2C);
+    return v;
+}
+
+int sccb_write_reg(uint8_t slave7, uint8_t reg, uint8_t val)
+{
+    Platform_BusLock(PLATFORM_BUS_I2C);
+    int v = sccb_write_reg_locked(slave7, reg, val);
+    Platform_BusUnlock(PLATFORM_BUS_I2C);
+    return v;
+}
+
+static int sccb_read_reg_locked(uint8_t slave7, uint8_t reg)
 {
     s_st.xfers++;
     if (s_backend == SCCB_BITBANG) return bb_read(slave7, reg);
@@ -266,7 +288,7 @@ int sccb_read_reg(uint8_t slave7, uint8_t reg)
     return -1;
 }
 
-int sccb_write_reg(uint8_t slave7, uint8_t reg, uint8_t val)
+static int sccb_write_reg_locked(uint8_t slave7, uint8_t reg, uint8_t val)
 {
     s_st.xfers++;
     if (s_backend == SCCB_BITBANG) return bb_write(slave7, reg, val);

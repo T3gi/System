@@ -7,6 +7,7 @@
  */
 #include "platform_camera.h"
 #include "main.h"
+#include "platform_time.h"
 #include <stdio.h>
 
 extern TIM_HandleTypeDef htim1;
@@ -55,16 +56,16 @@ uint32_t Camera_XclkStart(void)
 void Camera_HardReset(void)
 {
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_RESET);
-    HAL_Delay(10);
+    Platform_DelayMs(10);
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_SET);
-    HAL_Delay(50);
+    Platform_DelayMs(50);
 }
 
 /** Set PWDN state via PA1.  0=LOW, 1=HIGH. */
 void Camera_SetPwdn(int high)
 {
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2, high ? GPIO_PIN_SET : GPIO_PIN_RESET);
-    HAL_Delay(20);
+    Platform_DelayMs(20);
 }
 
 /* ==================================================================

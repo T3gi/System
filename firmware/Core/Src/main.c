@@ -26,6 +26,7 @@
 #include "platform_camera.h"   
 #include "perf.h"
 #include "mem_diag.h"
+#include "app_rtos.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -134,32 +135,14 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  perf_stat_t st_loop = { .name = "main_loop" };
-  uint32_t busy_cycles = 0;
-  uint32_t window_start = perf_now();
-
+  /* LR4: the super loop is gone.  AppRtos_Start() creates the tasks
+   * (docs/rtos-design.md) and starts the scheduler; it never returns. */
+  AppRtos_Start();
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    uint32_t t_loop_start = perf_now();
-
-    PROBE0_ON(); 
-    App_Poll();
-    PROBE0_OFF();
-
-    uint32_t elapsed = perf_now() - t_loop_start;
-    perf_add(&st_loop, elapsed);
-    busy_cycles += elapsed;
-
-    uint32_t window = perf_now() - window_start;
-    if (window >= SystemCoreClock) {
-        uint32_t load_pct = (uint32_t)(((uint64_t)busy_cycles * 100u) / window);
-        printf("LOAD pct=%lu%%\r\n", (unsigned long)load_pct);
-        busy_cycles = 0;
-        window_start = perf_now();
-    }
   }
   /* USER CODE END 3 */
 }
@@ -453,7 +436,8 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
-  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 1, 0);
+  /* LR4: the ISR wakes a task (FromISR API), so priority >= 5. */
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 6, 0);
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
   /* USER CODE END MX_GPIO_Init_2 */
 }

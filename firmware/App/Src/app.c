@@ -50,6 +50,19 @@ static bool     s_journal_ok;
 static uint32_t s_blink_start;
 static bool     s_blinking;
 
+/* ---- LR4 hooks -----------------------------------------------------------
+ * In the super-loop build (and in the host tests) these are no-ops or the
+ * direct call.  The FreeRTOS build (app_rtos.c) overrides them: a mutex
+ * around the damper state, which the temperature and camera tasks share, and
+ * a queue to the journal task instead of writing the flash in place. */
+__attribute__((weak)) void App_StateLock(void) { }
+__attribute__((weak)) void App_StateUnlock(void) { }
+__attribute__((weak)) bool App_JournalWrite(uint8_t state, uint8_t source,
+                                            int16_t temp_c100, uint32_t t_ms)
+{
+    return Journal_Append(state, source, temp_c100, t_ms);
+}
+
 volatile uint32_t btn_t_event = 0;
 volatile uint8_t btn_pending = 0;
 perf_stat_t st_btn_latency = { .name = "btn_latency" };
@@ -126,7 +139,7 @@ static void damper_changed(void)
 
     if (s_journal_ok) {
         int16_t temp_c100 = (int16_t)(s_temp * 100.0f);
-        if (!Journal_Append(Damper_State(), Damper_LastSource(), temp_c100, Platform_GetTick())) {
+        if (!App_JournalWrite(Damper_State(), Damper_LastSource(), temp_c100, Platform_GetTick())) {
             printf("ERR journal write\r\n");
         }
         s_blinking = true;
@@ -146,21 +159,30 @@ static void button_task(void)
 }
 
 /* FR-01: read the temperature.  FR-02, FR-03: open or close the damper. */
+void App_TempRun(void)
+{
+    float t = 0.0f;
+    bool ok = MPU6050_ReadTemperature(&t);
+
+    App_StateLock();
+    s_temp_ok = ok;
+    if (ok) {
+        s_temp = t;
+        int32_t temp_c100 = (int32_t)(s_temp * 100.0f);
+        if (Damper_OnTemperature(temp_c100, Platform_GetTick())) {
+            damper_changed();
+        }
+    }
+    App_StateUnlock();
+}
+
 static void temp_task(void)
 {
     if (Platform_GetTick() - s_last_temp < TEMP_PERIOD_MS) {
         return;
     }
     s_last_temp = Platform_GetTick();
-
-    s_temp_ok = MPU6050_ReadTemperature(&s_temp);
-    if (!s_temp_ok) {
-        return;
-    }
-    int32_t temp_c100 = (int32_t)(s_temp * 100.0f);
-    if (Damper_OnTemperature(temp_c100, Platform_GetTick())) {
-        damper_changed();
-    }
+    App_TempRun();
 }
 
 /* FR-04: take a frame.  FR-05: a hand over the lens toggles the damper
@@ -178,7 +200,16 @@ static void camera_task(void)
     if (Platform_GetTick() - s_last_camera < CAMERA_PERIOD_MS) {
         return;
     }
+    App_CameraRun();
+}
 
+bool App_CameraOk(void)
+{
+    return s_camera_ok;
+}
+
+void App_CameraRun(void)
+{
     const ov7670_mode_t *m = ov7670_mode_info(ov7670_current_mode());
     int got = OV7670_CaptureStrip((uint32_t)m->width * 2u, 0, CAMERA_STRIP_LINES);
     s_last_camera = Platform_GetTick();
@@ -201,18 +232,22 @@ static void camera_task(void)
     }
     s_camera_err = 0;
 
+    uint8_t luma = Vision_MeanLuma(OV7670_Buffer(), (uint32_t)got);
+    App_StateLock();
+    s_luma = luma;
     s_luma = Vision_MeanLuma(OV7670_Buffer(), (uint32_t)got);
     s_luma_ok = true;
     if (Vision_Update(s_luma)) {
         Damper_OnCameraTrigger(Platform_GetTick());
         damper_changed();
     }
+    App_StateUnlock();
 }
 
 /* FR-08: LED on while the damper is open.  After a journal write it blinks
  * twice (4 phases of LED_BLINK_MS: opposite, new state, opposite, new state)
  * and then shows the new state. */
-static void led_task(void)
+void App_LedRun(void)
 {
     bool open = (Damper_State() == DAMPER_OPEN);
 
@@ -239,6 +274,11 @@ static void tick_task(void)
     if (Platform_GetTick() - s_last_tick < TICK_PERIOD_MS) {
         return;
     }
+    App_TickRun();
+}
+
+void App_TickRun(void)
+{
     s_last_tick = Platform_GetTick();
 
     const char *state = "CLOSED";
@@ -285,7 +325,7 @@ void App_Poll(void)
     button_task();
     temp_task();
     camera_task();
-    led_task();
+    App_LedRun();
     tick_task();
     Process_Button_Event();
 }
