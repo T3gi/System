@@ -235,6 +235,7 @@ void App_CameraRun(void)
     uint8_t luma = Vision_MeanLuma(OV7670_Buffer(), (uint32_t)got);
     App_StateLock();
     s_luma = luma;
+    s_luma = Vision_MeanLuma(OV7670_Buffer(), (uint32_t)got);
     s_luma_ok = true;
     if (Vision_Update(s_luma)) {
         Damper_OnCameraTrigger(Platform_GetTick());
