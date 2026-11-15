@@ -1,5 +1,6 @@
 #include "platform_spi.h"
 #include "stm32f4xx_hal.h"
+#include "platform_rtos.h"
 
 extern SPI_HandleTypeDef hspi2;
 
@@ -8,11 +9,15 @@ extern SPI_HandleTypeDef hspi2;
 #define SPI_CS_PORT  GPIOB
 #define SPI_CS_PIN   GPIO_PIN_12
 
+/* LR4: one flash transaction spans CS low .. CS high, so the SPI bus lock is
+ * taken with CS and released with it (journal task vs console F* commands). */
 void Platform_SPI_SetCS(bool active) {
     if (active) {
+        Platform_BusLock(PLATFORM_BUS_SPI);
         SPI_CS_PORT->BSRR = (uint32_t)SPI_CS_PIN << 16;   /* reset: CS low */
     } else {
         SPI_CS_PORT->BSRR = (uint32_t)SPI_CS_PIN;         /* set: CS high */
+        Platform_BusUnlock(PLATFORM_BUS_SPI);
     }
 }
 

@@ -19,6 +19,17 @@ static uint32_t s_cmd_count = 0;
 
 uint32_t Console_CommandCount(void) { return s_cmd_count; }
 
+/* LR4: commands added by the FreeRTOS build (app_rtos.c).  The LR3 commands
+ * below are unchanged; these weak defaults keep the super-loop build and the
+ * host tests as they were. */
+__attribute__((weak)) void Console_ExtraHelp(void) { }
+__attribute__((weak)) bool Console_ExtraCommand(int argc, char **argv)
+{
+    (void)argc;
+    (void)argv;
+    return false;
+}
+
 static void send_strip_named(const char *marker, int size, uint32_t width,
                              uint32_t start_line, uint32_t lines)
 {
@@ -60,6 +71,7 @@ void Console_Help(void)
     printf("  FDUMP [addr] [len]         hex dump\r\n");
     printf("  FLASHREAD <addr> <len>     stream a range base64+CRC\r\n");
     printf("  RESET                      reboot the MCU\r\n");
+    Console_ExtraHelp();
 }
 
 static void cmd_modes(void)
@@ -396,7 +408,7 @@ void Console_Handle(char *cmd)
     } else if (!strcmp(argv[0], "RESET")) {
         printf("RESET\r\nOK\r\n");
         Platform_SystemReset();
-    } else {
+    } else if (!Console_ExtraCommand(argc, argv)) {
         printf("ERR unknown '%s'\r\n", argv[0]);
     }
     printf("OK\r\n");

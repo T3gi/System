@@ -15,6 +15,14 @@ void Platform_Console_Start(void);
 /** USART2 receive ISR body, called from USART2_IRQHandler. */
 void Platform_Console_IrqHandler(void);
 
+/** LR4: function the receive ISR calls after each byte (NULL = none). */
+void Platform_Console_SetRxNotify(void (*fn)(void));
+
+/** LR4: hold the console across several printf() calls so they stay together
+ *  (no-op before the scheduler starts and in the host tests). */
+void Platform_ConsoleLock(void);
+void Platform_ConsoleUnlock(void);
+
 /** Next received console byte, or -1 if none (non-blocking). */
 int  Platform_Console_GetChar(void);
 /** Received bytes / overrun errors since boot (diagnostics for PING). */

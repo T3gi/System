@@ -1,5 +1,8 @@
 #include "platform_board.h"
 #include "main.h"
+#include "platform_rtos.h"
+#include <stdarg.h>
+#include <stdio.h>
 
 extern UART_HandleTypeDef huart2;
 
@@ -16,6 +19,29 @@ static volatile uint32_t s_rx_dropped  = 0;
 static volatile uint8_t  s_rx_ring[RX_RING_SIZE];
 static volatile uint16_t s_rx_head = 0;
 static volatile uint16_t s_rx_tail = 0;
+
+/* LR4: called from the receive ISR after each byte (wakes the console task). */
+static void (*s_rx_notify)(void);
+
+void Platform_Console_SetRxNotify(void (*fn)(void)) { s_rx_notify = fn; }
+
+/* --- printf() under the console lock (LR4) --------------------------------
+ * The linker sends every printf() call here (-Wl,--wrap=printf, firmware
+ * Makefile).  One call prints as a unit, so lines from different tasks do not
+ * mix mid-line.  Before the scheduler starts the lock is a no-op. */
+int __wrap_printf(const char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    Platform_BusLock(PLATFORM_BUS_CONSOLE);
+    int n = vprintf(fmt, ap);
+    Platform_BusUnlock(PLATFORM_BUS_CONSOLE);
+    va_end(ap);
+    return n;
+}
+
+void Platform_ConsoleLock(void)   { Platform_BusLock(PLATFORM_BUS_CONSOLE); }
+void Platform_ConsoleUnlock(void) { Platform_BusUnlock(PLATFORM_BUS_CONSOLE); }
 
 /* --- Retarget printf() --------------------------------------------------- */
 int _write(int file, char *ptr, int len)
@@ -59,6 +85,9 @@ void Platform_Console_IrqHandler(void)
         } else {
             s_rx_ring[s_rx_head] = d;
             s_rx_head = next;
+        }
+        if (s_rx_notify != NULL) {
+            s_rx_notify();
         }
     }
 }

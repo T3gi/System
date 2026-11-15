@@ -34,10 +34,14 @@ BUILD_DIR = build
 ######################################
 # source
 ######################################
+# LR4: FreeRTOS-Kernel V11.1.0 (git submodule), port GCC/ARM_CM4F, heap_4.
+RTOS_DIR = Middlewares/FreeRTOS
 # C sources
 C_SOURCES =  \
 Core/Src/main.c \
+Core/Src/stm32f4xx_hal_timebase_tim.c \
 App/Src/app.c \
+App/Src/app_rtos.c \
 App/Src/selftest.c \
 App/Src/console.c \
 App/Src/stream.c \
@@ -81,7 +85,16 @@ Platform/Src/platform_pwm.c \
 Platform/Src/platform_time.c \
 Platform/Src/platform_sccb.c \
 Platform/Src/platform_camera.c \
-Platform/Src/platform_board.c
+Platform/Src/platform_board.c \
+Platform/Src/platform_rtos.c \
+$(RTOS_DIR)/tasks.c \
+$(RTOS_DIR)/queue.c \
+$(RTOS_DIR)/list.c \
+$(RTOS_DIR)/timers.c \
+$(RTOS_DIR)/event_groups.c \
+$(RTOS_DIR)/stream_buffer.c \
+$(RTOS_DIR)/portable/GCC/ARM_CM4F/port.c \
+$(RTOS_DIR)/portable/MemMang/heap_4.c
 
 # ASM sources
 ASM_SOURCES =  \
@@ -149,7 +162,9 @@ C_INCLUDES =  \
 -IDrivers/CMSIS/Include \
 -IPlatform/Inc \
 -IDevices/Inc \
--IApp/Inc
+-IApp/Inc \
+-I$(RTOS_DIR)/include \
+-I$(RTOS_DIR)/portable/GCC/ARM_CM4F
 
 
 # compile gcc flags
@@ -158,6 +173,11 @@ ASFLAGS = $(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) -Wall -fdata-sections -ffuncti
 CFLAGS += $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) -Wall -Wextra -fdata-sections -ffunction-sections
 
 CFLAGS += -fstack-usage -Wstack-usage=512
+
+# LR4: printf goes through __wrap_printf (platform_board.c, console lock), so
+# gcc must not turn printf("...") into puts().  EXTRA_CFLAGS selects the OS
+# scenarios, e.g. make build EXTRA_CFLAGS="-DconfigTICK_RATE_HZ=100".
+CFLAGS += -fno-builtin-printf $(EXTRA_CFLAGS)
 
 ifeq ($(DEBUG), 1)
 CFLAGS += -g -gdwarf-2
@@ -180,6 +200,7 @@ LIBDIR =
 LDFLAGS = $(MCU) -specs=nano.specs -u _printf_float -T$(LDSCRIPT) $(LIBDIR) $(LIBS) \
           -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref \
           -Wl,--gc-sections \
+          -Wl,--wrap=printf \
           -Wl,--print-memory-usage
 
 # default action: build all (the layer rules are checked first, see check-arch)

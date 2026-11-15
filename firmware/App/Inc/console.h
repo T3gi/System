@@ -27,4 +27,9 @@ void Console_CaptureFrame(void);
 /** Commands executed since boot (shown by PING and the heartbeat). */
 uint32_t Console_CommandCount(void);
 
+/** LR4 extension points (weak defaults in console.c, see app_rtos.c). */
+#include <stdbool.h>
+void Console_ExtraHelp(void);
+bool Console_ExtraCommand(int argc, char **argv);
+
 #endif /* CONSOLE_H */
