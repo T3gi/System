@@ -42,6 +42,7 @@ Core/Src/main.c \
 Core/Src/stm32f4xx_hal_timebase_tim.c \
 App/Src/app.c \
 App/Src/app_rtos.c \
+App/Src/rtos_metrics.c \
 App/Src/selftest.c \
 App/Src/console.c \
 App/Src/stream.c \
@@ -87,6 +88,7 @@ Platform/Src/platform_sccb.c \
 Platform/Src/platform_camera.c \
 Platform/Src/platform_board.c \
 Platform/Src/platform_rtos.c \
+Platform/Src/platform_trace.c \
 $(RTOS_DIR)/tasks.c \
 $(RTOS_DIR)/queue.c \
 $(RTOS_DIR)/list.c \
@@ -177,6 +179,10 @@ CFLAGS += -fstack-usage -Wstack-usage=512
 # LR4: printf goes through __wrap_printf (platform_board.c, console lock), so
 # gcc must not turn printf("...") into puts().  EXTRA_CFLAGS selects the OS
 # scenarios, e.g. make build EXTRA_CFLAGS="-DconfigTICK_RATE_HZ=100".
+# LR4 measurement layer (rtos_metrics.c, platform_trace.c): run-time stats,
+# tick hook and context-switch trace in FreeRTOSConfig.h.
+CFLAGS += -DLAB4_METRICS=1
+
 CFLAGS += -fno-builtin-printf $(EXTRA_CFLAGS)
 
 ifeq ($(DEBUG), 1)

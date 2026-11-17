@@ -5,7 +5,7 @@ UART_PORT ?= /dev/ttyACM0
 UART_BAUD ?= 115200
 
 build:
-	$(DOCKER) make -C firmware all
+	$(DOCKER) make -C firmware all EXTRA_CFLAGS="$(EXTRA_CFLAGS)"
 
 # Host unit tests (tests/README.md), no board needed.
 test:
