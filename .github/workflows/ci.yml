@@ -9,6 +9,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4.2.2
+        with:
+          submodules: true   # LR4: FreeRTOS-Kernel in firmware/Middlewares/FreeRTOS
 
       - name: Build Docker image
         run: docker build -t stm32-build docker/
