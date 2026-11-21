@@ -17,8 +17,9 @@
  *
  * ISRs only record the event and wake a task (USART2 RX, EXTI B1).  Data
  * between tasks goes through a queue (journal) or a notification; the damper
- * state shared by temp and camera is under a mutex; the buses are locked in
- * the Platform layer.
+ * state shared by temp and camera is under a mutex; the camera itself (its
+ * VSYNC timing and the one frame buffer) is under a binary semaphore shared by
+ * camera and frame; the buses are locked in the Platform layer.
  *
  * The OS measurement commands and the LR4 scenario fixtures live in
  * rtos_metrics.c; they attach through the two weak hooks below.
@@ -81,6 +82,22 @@
 /* ---- kernel objects ------------------------------------------------------ */
 static TaskHandle_t h_btn, h_temp, h_tick, h_cmd, h_camera, h_journal, h_frame;
 static SemaphoreHandle_t s_state_mutex;   /* damper/vision state (temp + camera) */
+/* Camera owner (camera + frame).  Found on the stand: without it the camera
+ * task (prio 2) kept sampling the sensor while the frame task (prio 1) was
+ * waiting for VSYNC, and every button frame failed with "ERR strip -1" after
+ * the 2 s sync timeout; the camera task could also overwrite the shared frame
+ * buffer while a strip was being sent.  The frame task holds the lock for the
+ * whole frame, the camera task skips its capture while it is taken - the
+ * same behaviour as LR3, where the frame transfer blocked the loop.
+ *
+ * A binary semaphore, not a mutex - also found on the stand.  With a mutex,
+ * a second B1 press during the transfer made btn (prio 6) wait for the
+ * console line the frame task was printing, so frame inherited prio 6; the
+ * kernel only drops an inherited priority when the task holds no mutex at
+ * all, and frame kept this one for the whole frame, so tick/temp/cmd starved
+ * for ~21 s (TICK gap, then 20 catch-up lines).  Nobody ever blocks on this
+ * lock (camera polls it with timeout 0), so it needs no inheritance. */
+static SemaphoreHandle_t s_cam_lock;
 static QueueHandle_t     s_journal_q;     /* damper changes -> journal task */
 static TimerHandle_t     s_led_timer;
 
@@ -197,7 +214,9 @@ static void task_frame(void *arg)
     for (;;) {
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
         s_frame_busy = true;
+        xSemaphoreTake(s_cam_lock, portMAX_DELAY);
         Console_CaptureFrame();
+        xSemaphoreGive(s_cam_lock);
         s_frame_busy = false;
     }
 }
@@ -241,7 +260,12 @@ static void task_camera(void *arg)
         vTaskSuspend(NULL);                /* as in LR3: no camera, no task */
     }
     for (;;) {
-        App_CameraRun();
+        /* Do not wait: while a frame is being sent the light sample is simply
+         * skipped, so this task never blocks behind the 30 s transfer. */
+        if (xSemaphoreTake(s_cam_lock, 0) == pdTRUE) {
+            App_CameraRun();
+            xSemaphoreGive(s_cam_lock);
+        }
         vTaskDelay(pdMS_TO_TICKS(CAMERA_PAUSE_MS));
     }
 }
@@ -287,8 +311,10 @@ void AppRtos_Start(void)
     Platform_RtosInit();
 
     s_state_mutex = xSemaphoreCreateMutex();
+    s_cam_lock    = xSemaphoreCreateBinary();   /* created empty */
     s_journal_q   = xQueueCreate(JOURNAL_QUEUE_LEN, sizeof(journal_req_t));
-    configASSERT(s_state_mutex && s_journal_q);
+    configASSERT(s_state_mutex && s_cam_lock && s_journal_q);
+    xSemaphoreGive(s_cam_lock);
 
     create(task_btn,     "btn",     STACK_BTN,     PRIO_BTN,     &h_btn);
     create(task_temp,    "temp",    STACK_TEMP,    PRIO_TEMP,    &h_temp);
