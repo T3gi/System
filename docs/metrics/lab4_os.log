@@ -1,0 +1,719 @@
+# fw lab4-camlock 2026-11-18 08:33:35 lab4_os (renamed: started by mistake as lab4_long_1h)
+picocom v3.1
+
+port is        : /dev/ttyACM1
+flowcontrol    : none
+baudrate is    : 115200
+parity is      : none
+databits are   : 8
+stopbits are   : 1
+escape is      : C-a
+local echo is  : no
+noinit is      : no
+noreset is     : no
+hangup is      : no
+nolock is      : no
+send_cmd is    : sz -vv
+receive_cmd is : rz -vv -E
+imap is        : lfcrlf,
+omap is        : 
+emap is        : crcrlf,delbs,
+logfile is     : none
+initstring     : none
+exit_after is  : not set
+exit is        : no
+
+Type [C-a] [C-h] to see available commands
+Terminal ready
+�TICK t=4115463 rx=51 ore=1 drop=0 cmds=4 damper=OPEN lock_s=0 lum=116
+[MPU6050] Температура: 27.11 °C
+LOAD pct=22%
+TICK t=4116463 rx=51 ore=1 drop=0 cmds=4 damper=OPEN lock_s=0 lum=115
+[MPU6050] Температура: 27.11 °C
+LOAD pct=22%
+TICK t=4117463 rx=51 ore=1 drop=0 cmds=4 damper=OPEN lock_s=0 lum=96
+[MPU6050] Температура: 27.02 °C
+LOAD pct=12%
+hello from STM32
+
+========================================
+ STM32F411RE + OV7670 strip-capture rig [lab2-sccb-hal]
+ SYSCLK=84000000 HCLK=84000000 PCLK1=42000000 PCLK2=84000000
+ Build = Nov 18 2026 06:30:59   UART = 921600 8N1 (fixed)
+ Strip buffer = 41984 bytes (32 lines x 1312 max)
+========================================
+
+=== Запуск перевірки компонентів ===
+Сканування шини I2C1...
+ Знайдено пристрій за адресою: 0x1D
+ Знайдено пристрій за адресою: 0x68
+ Знайдено пристрій за адресою: 0x6B
+ Знайдено пристрій за адресою: 0x77
+Сканування завершено. Знайдено пристроїв: 4
+[W25Q64] JEDEC ID: 0xEF 0x40 0x17 (OK - W25Q64 знайдено)
+SELFTEST W25Q64 OK
+[MPU6050] WHO_AM_I: 0x68 (OK)
+[MPU6050] Прокинуто, активовано робочий режим.
+SELFTEST MPU6050 OK
+[LSM303D] WHO_AM_I: 0x49 (OK)
+[L3GD20]  WHO_AM_I: 0xD4 (OK)
+[BMP180]  CHIP_ID:  0x55 (OK)
+SELFTEST GY89 OK
+===================================
+>> XCLK = 21000000 Hz on PA8 (TIM1_CH1, 50% duty)
+>> SCCB backend = HAL (Mem_Write + Transmit/Receive)
+>> SCCB probe #0: PID=118(0x76) VER=115(0x73) halerr=0x0  [OV7670 OK]
+SELFTEST OV7670 OK
+SELFTEST SUMMARY 4/4 OK
+JOURNAL records=134 bad=0 next_seq=123
+LOG seq=113 t=6164 state=OPEN src=TEMP temp=27.02
+LOG seq=114 t=1055621 state=CLOSED src=CAMERA temp=27.16
+LOG seq=115 t=1059059 state=OPEN src=CAMERA temp=27.21
+LOG seq=116 t=6180 state=OPEN src=TEMP temp=26.97
+LOG seq=117 t=1651149 state=CLOSED src=CAMERA temp=27.07
+LOG seq=118 t=1951318 state=OPEN src=TEMP temp=26.97
+LOG seq=119 t=2079059 state=CLOSED src=CAMERA temp=26.97
+LOG seq=120 t=2379347 state=OPEN src=TEMP temp=27.02
+LOG seq=121 t=2730051 state=CLOSED src=CAMERA temp=27.07
+LOG seq=122 t=3030393 state=OPEN src=TEMP temp=27.11
+MODE 1 CIF nominal=352x288 window=h[170..90] v[14..494]
+READY
+COMMANDS
+  PING                       -> PONG
+  ID                         read PID/VER over SCCB
+  MODE <n>                   0=VGA 1=CIF 2=QVGA 3=QCIF_BUILTIN
+                             4=QCIF_LINUX 5=CIF_FULLWIN 6=QVGA_FULLWIN
+                             7=VGA_FULLARRAY 656x488
+  MODES                      list modes
+  PROBE                      measure real HREF/PCLK geometry
+  FREEZE | AUTO              latch / release AEC+AGC+AWB
+  RD <reg>                   read register (hex)
+  SCCB [n] [attempts]        select back-end 0=HAL 1=HAL_MEM 2=BITBANG
+  SCCBTEST [n|-1] [reads] [attempts] [stopwait]  reliability test
+  WR <reg> <val>             write register (hex)
+  WIN <hs> <he> <vs> <ve>    set hardware window (decimal)
+  SNAP                       ONE frame, 2x2 averaged -> 176x144
+  FRAME [lineBytes] [lines] [verify]  capture+stream a whole frame
+  STRIP <lineBytes> <start> <lines>   capture + base64 one strip
+  DUP <lineBytes>            report duplicate-line distance
+  WARM <n>                   discard n frames
+  -- W25Q64 SPI flash on SPI2 (CS=PB12 SCK=PB13 MISO=PB14 MOSI=PB15) --
+  FINIT [0..7]               bring up SPI2 (0=21MHz .. 4=1.3MHz, default 4)
+  FID | FSTATUS | FSPEED <n> JEDEC id / status / clock
+  FTEST [addr]               erase+program+verify one page
+  FERASE [blocks]            erase N x 64KB (VGA frame needs 10)
+  FDUMP [addr] [len]         hex dump
+  FLASHREAD <addr> <len>     stream a range base64+CRC
+  RESET                      reboot the MCU
+  -- FreeRTOS (LR4) --
+  TASKS                      run-time stats + task list
+  STACK                      free stack per task (words) + MSP
+  HEAP                       FreeRTOS heap free / min ever / total
+  TRACE [n]                  last n context switches (DWT time)
+  CSWITCH [n]                context-switch cost, n samples
+  STARVE <ms>                prio-5 task busy-waits ms (starvation)
+  INVERT M|S                 priority inversion with mutex / binary semaphore
+  QFLOOD [n]                 n journal records without waiting (queue full)
+  JSTAT                      journal counters
+OK
+RTOS FreeRTOS V11.1.0 tick=1000 Hz heap=24576 free_after_create=6816
+DAMPER OPEN src=TEMP t=6188
+TICK t=6191 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=30
+[MPU6050] Температура: 27.11 °C
+LOAD pct=92%
+TICK t=7189 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=29
+[MPU6050] Температура: 27.21 °C
+LOAD pct=12%
+TICK t=8189 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=35
+[MPU6050] Температура: 27.16 °C
+LOAD pct=22%
+TICK t=9189 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=42
+[MPU6050] Температура: 27.16 °C
+LOAD pct=22%
+TICK t=10189 rx=0 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=79
+[MPU6050] Температура: 27.02 °C
+LOAD pct=22%
+TICK t=11190 rx=2 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=64
+[MPU6050] Температура: 27.07 °C
+LOAD pct=12%
+TICK t=12189 rx=4 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=65
+[MPU6050] Температура: 27.07 °C
+LOAD pct=22%
+TICK t=13189 rx=6 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=66
+[MPU6050] Температура: 27.07 °C
+LOAD pct=22%
+TICK t=14189 rx=8 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=70
+[MPU6050] Температура: 27.07 °C
+LOAD pct=22%
+TICK t=15190 rx=11 ore=0 drop=0 cmds=0 damper=OPEN lock_s=0 lum=68
+[MPU6050] Температура: 27.21 °C
+LOAD pct=12%
+CMD [CSWITCH 1000]
+CSWITCH n=1000 min_cyc=687 avg_cyc=689 max_cyc=876 min_ns=8178 avg_ns=8202 max_ns=10428
+OK
+TICK t=16189 rx=13 ore=0 drop=0 cmds=1 damper=OPEN lock_s=0 lum=69
+[MPU6050] Температура: 27.11 °C
+LOAD pct=25%
+TICK t=17189 rx=13 ore=0 drop=0 cmds=1 damper=OPEN lock_s=0 lum=71
+[MPU6050] Температура: 27.07 °C
+LOAD pct=19%
+TICK t=18189 rx=13 ore=0 drop=0 cmds=1 damper=OPEN lock_s=0 lum=71
+[MPU6050] Температура: 27.11 °C
+LOAD pct=19%
+TICK t=19190 rx=14 ore=0 drop=0 cmds=1 damper=OPEN lock_s=0 lum=75
+[MPU6050] Температура: 27.07 °C
+LOAD pct=64%
+TICK t=20189 rx=19 ore=0 drop=0 cmds=1 damper=OPEN lock_s=0 lum=76
+[MPU6050] Температура: 27.21 °C
+LOAD pct=22%
+TICK t=21190 rx=21 ore=0 drop=0 cmds=1 damper=OPEN lock_s=0 lum=79
+[MPU6050] Температура: 27.11 °C
+LOAD pct=22%
+CMD [INVERT M]
+OK
+INV lock=mutex hi_wait_us=20033 hold_ms=20 med_ms=100
+TICK t=22190 rx=22 ore=0 drop=0 cmds=2 damper=OPEN lock_s=0 lum=78
+[MPU6050] Температура: 27.16 °C
+LOAD pct=26%
+TICK t=23190 rx=22 ore=0 drop=0 cmds=2 damper=OPEN lock_s=0 lum=77
+[MPU6050] Температура: 27.02 °C
+LOAD pct=20%
+TICK t=24190 rx=24 ore=0 drop=0 cmds=2 damper=OPEN lock_s=0 lum=80
+[MPU6050] Температура: 26.97 °C
+LOAD pct=22%
+TICK t=25191 rx=26 ore=0 drop=0 cmds=2 damper=OPEN lock_s=0 lum=84
+[MPU6050] Температура: 27.11 °C
+LOAD pct=22%
+TICK t=26190 rx=27 ore=0 drop=0 cmds=2 damper=OPEN lock_s=0 lum=86
+[MPU6050] Температура: 27.02 °C
+LOAD pct=13%
+TICK t=27190 rx=30 ore=0 drop=0 cmds=2 damper=OPEN lock_s=0 lum=85
+[MPU6050] Температура: 27.07 °C
+LOAD pct=21%
+CMD [INVERT M]
+OK
+INV lock=mutex hi_wait_us=20033 hold_ms=20 med_ms=100
+TICK t=28190 rx=32 ore=0 drop=0 cmds=3 damper=OPEN lock_s=0 lum=85
+[MPU6050] Температура: 27.11 °C
+LOAD pct=76%
+TICK t=29191 rx=35 ore=0 drop=0 cmds=3 damper=OPEN lock_s=0 lum=85
+[MPU6050] Температура: 26.97 °C
+LOAD pct=22%
+TICK t=30190 rx=39 ore=0 drop=0 cmds=3 damper=OPEN lock_s=0 lum=85
+[MPU6050] Температура: 27.16 °C
+LOAD pct=12%
+TICK t=31190 rx=39 ore=0 drop=0 cmds=3 damper=OPEN lock_s=0 lum=84
+[MPU6050] Температура: 27.11 °C
+LOAD pct=22%
+TICK t=32190 rx=39 ore=0 drop=0 cmds=3 damper=OPEN lock_s=0 lum=85
+[MPU6050] Температура: 27.02 °C
+LOAD pct=22%
+CMD [INVERT M]
+OK
+INV lock=mutex hi_wait_us=20033 hold_ms=20 med_ms=100
+TICK t=33191 rx=40 ore=0 drop=0 cmds=4 damper=OPEN lock_s=0 lum=84
+[MPU6050] Температура: 27.16 °C
+LOAD pct=34%
+TICK t=34190 rx=40 ore=0 drop=0 cmds=4 damper=OPEN lock_s=0 lum=82
+[MPU6050] Температура: 27.07 °C
+LOAD pct=12%
+TICK t=35190 rx=41 ore=0 drop=0 cmds=4 damper=OPEN lock_s=0 lum=83
+[MPU6050] Температура: 27.11 °C
+LOAD pct=22%
+TICK t=36191 rx=45 ore=0 drop=0 cmds=4 damper=OPEN lock_s=0 lum=84
+[MPU6050] Температура: 27.16 °C
+LOAD pct=22%
+TICK t=37191 rx=48 ore=0 drop=0 cmds=4 damper=OPEN lock_s=0 lum=82
+[MPU6050] Температура: 27.07 °C
+LOAD pct=22%
+CMD [INVERT M]
+OK
+INV lock=mutex hi_wait_us=20033 hold_ms=20 med_ms=100
+TICK t=38191 rx=49 ore=0 drop=0 cmds=5 damper=OPEN lock_s=0 lum=82
+[MPU6050] Температура: 27.21 °C
+LOAD pct=25%
+TICK t=39191 rx=50 ore=0 drop=0 cmds=5 damper=OPEN lock_s=0 lum=81
+[MPU6050] Температура: 27.16 °C
+LOAD pct=22%
+TICK t=40191 rx=54 ore=0 drop=0 cmds=5 damper=OPEN lock_s=0 lum=81
+[MPU6050] Температура: 27.11 °C
+LOAD pct=22%
+TICK t=41191 rx=55 ore=0 drop=0 cmds=5 damper=OPEN lock_s=0 lum=81
+[MPU6050] Температура: 27.11 °C
+LOAD pct=19%
+TICK t=42191 rx=55 ore=0 drop=0 cmds=5 damper=OPEN lock_s=0 lum=81
+[MPU6050] Температура: 27.07 °C
+LOAD pct=64%
+TICK t=43191 rx=55 ore=0 drop=0 cmds=5 damper=OPEN lock_s=0 lum=82
+[MPU6050] Температура: 27.11 °C
+LOAD pct=22%
+CMD [INVET M]
+ERR unknown 'INVET'
+OK
+TICK t=44191 rx=57 ore=0 drop=0 cmds=6 damper=OPEN lock_s=0 lum=81
+[MPU6050] Температура: 27.11 °C
+LOAD pct=23%
+TICK t=45191 rx=57 ore=0 drop=0 cmds=6 damper=OPEN lock_s=0 lum=81
+[MPU6050] Температура: 27.11 °C
+LOAD pct=14%
+TICK t=46191 rx=60 ore=0 drop=0 cmds=6 damper=OPEN lock_s=0 lum=80
+[MPU6050] Температура: 27.11 °C
+LOAD pct=19%
+TICK t=47191 rx=65 ore=0 drop=0 cmds=6 damper=OPEN lock_s=0 lum=82
+[MPU6050] Температура: 27.07 °C
+LOAD pct=22%
+CMD [INVERT M]
+OK
+INV lock=mutex hi_wait_us=20033 hold_ms=20 med_ms=100
+TICK t=48191 rx=66 ore=0 drop=0 cmds=7 damper=OPEN lock_s=0 lum=79
+[MPU6050] Температура: 27.11 °C
+LOAD pct=34%
+TICK t=49191 rx=66 ore=0 drop=0 cmds=7 damper=OPEN lock_s=0 lum=79
+[MPU6050] Температура: 27.11 °C
+LOAD pct=13%
+TICK t=50192 rx=69 ore=0 drop=0 cmds=7 damper=OPEN lock_s=0 lum=79
+[MPU6050] Температура: 27.16 °C
+LOAD pct=20%
+TICK t=51192 rx=72 ore=0 drop=0 cmds=7 damper=OPEN lock_s=0 lum=76
+[MPU6050] Температура: 27.11 °C
+LOAD pct=22%
+CMD [INVERT S]
+OK
+TICK t=52265 rx=75 ore=0 drop=0 cmds=8 damper=OPEN lock_s=0 lum=76
+[MPU6050] Температура: 27.11 °C
+LOAD pct=30%
+INV lock=binsem hi_wait_us=132350 hold_ms=20 med_ms=100
+TICK t=53192 rx=75 ore=0 drop=0 cmds=8 damper=OPEN lock_s=0 lum=77
+[MPU6050] Температура: 27.11 °C
+LOAD pct=16%
+TICK t=54193 rx=75 ore=0 drop=0 cmds=8 damper=OPEN lock_s=0 lum=75
+[MPU6050] Температура: 27.16 °C
+LOAD pct=22%
+TICK t=55192 rx=79 ore=0 drop=0 cmds=8 damper=OPEN lock_s=0 lum=75
+[MPU6050] Температура: 27.07 °C
+LOAD pct=22%
+TICK t=56192 rx=81 ore=0 drop=0 cmds=8 damper=OPEN lock_s=0 lum=76
+[MPU6050] Температура: 27.16 °C
+LOAD pct=22%
+CMD [INVERT S]
+OK
+INV lock=binsem hi_wait_us=120074 hold_ms=20 med_ms=100
+TICK t=57192 rx=84 ore=0 drop=0 cmds=9 damper=OPEN lock_s=0 lum=74
+[MPU6050] Температура: 27.02 °C
+LOAD pct=25%
+TICK t=58193 rx=84 ore=0 drop=0 cmds=9 damper=OPEN lock_s=0 lum=73
+[MPU6050] Температура: 27.11 °C
+LOAD pct=22%
+TICK t=59192 rx=88 ore=0 drop=0 cmds=9 damper=OPEN lock_s=0 lum=74
+[MPU6050] Температура: 27.21 °C
+LOAD pct=22%
+TICK t=60192 rx=92 ore=0 drop=0 cmds=9 damper=OPEN lock_s=0 lum=73
+[MPU6050] Температура: 27.16 °C
+LOAD pct=22%
+CMD [INVERT S]
+OK
+INV lock=binsem hi_wait_us=120076 hold_ms=20 med_ms=100
+TICK t=61192 rx=93 ore=0 drop=0 cmds=10 damper=OPEN lock_s=0 lum=73
+[MPU6050] Температура: 27.16 °C
+LOAD pct=25%
+TICK t=62193 rx=93 ore=0 drop=0 cmds=10 damper=OPEN lock_s=0 lum=73
+[MPU6050] Температура: 27.07 °C
+LOAD pct=22%
+TICK t=63192 rx=93 ore=0 drop=0 cmds=10 damper=OPEN lock_s=0 lum=74
+[MPU6050] Температура: 27.11 °C
+LOAD pct=22%
+TICK t=64193 rx=97 ore=0 drop=0 cmds=10 damper=OPEN lock_s=0 lum=73
+[MPU6050] Температура: 27.07 °C
+LOAD pct=22%
+TICK t=65193 rx=101 ore=0 drop=0 cmds=10 damper=OPEN lock_s=0 lum=72
+[MPU6050] Температура: 27.07 °C
+LOAD pct=12%
+CMD [INVERT S]
+OK
+INV lock=binsem hi_wait_us=764321 hold_ms=20 med_ms=100
+TICK t=66193 rx=102 ore=0 drop=0 cmds=11 damper=OPEN lock_s=0 lum=73
+[MPU6050] Температура: 27.11 °C
+LOAD pct=76%
+TICK t=67193 rx=104 ore=0 drop=0 cmds=11 damper=OPEN lock_s=0 lum=71
+[MPU6050] Температура: 27.11 °C
+LOAD pct=22%
+TICK t=68193 rx=108 ore=0 drop=0 cmds=11 damper=OPEN lock_s=0 lum=73
+[MPU6050] Температура: 27.11 °C
+LOAD pct=18%
+TICK t=69193 rx=112 ore=0 drop=0 cmds=11 damper=OPEN lock_s=0 lum=74
+[MPU6050] Температура: 27.11 °C
+LOAD pct=16%
+CMD [UINVERT S]
+ERR unknown 'UINVERT'
+OK
+TICK t=70193 rx=113 ore=0 drop=0 cmds=12 damper=OPEN lock_s=0 lum=72
+[MPU6050] Температура: 27.16 °C
+LOAD pct=22%
+TICK t=71193 rx=114 ore=0 drop=0 cmds=12 damper=OPEN lock_s=0 lum=71
+[MPU6050] Температура: 27.21 °C
+LOAD pct=22%
+TICK t=72193 rx=116 ore=0 drop=0 cmds=12 damper=OPEN lock_s=0 lum=72
+[MPU6050] Температура: 27.02 °C
+LOAD pct=17%
+TICK t=73193 rx=120 ore=0 drop=0 cmds=12 damper=OPEN lock_s=0 lum=74
+[MPU6050] Температура: 27.11 °C
+LOAD pct=17%
+CMD [INVERT S]
+OK
+INV lock=binsem hi_wait_us=120074 hold_ms=20 med_ms=100
+TICK t=74193 rx=122 ore=0 drop=0 cmds=13 damper=OPEN lock_s=0 lum=73
+[MPU6050] Температура: 26.97 °C
+LOAD pct=34%
+TICK t=75193 rx=122 ore=0 drop=0 cmds=13 damper=OPEN lock_s=0 lum=72
+[MPU6050] Температура: 26.92 °C
+LOAD pct=22%
+TICK t=76193 rx=122 ore=0 drop=0 cmds=13 damper=OPEN lock_s=0 lum=73
+[MPU6050] Температура: 27.07 °C
+LOAD pct=16%
+TICK t=77193 rx=125 ore=0 drop=0 cmds=13 damper=OPEN lock_s=0 lum=72
+[MPU6050] Температура: 27.11 °C
+LOAD pct=18%
+TICK t=78193 rx=128 ore=0 drop=0 cmds=13 damper=OPEN lock_s=0 lum=72
+[MPU6050] Температура: 27.07 °C
+LOAD pct=22%
+TICK t=79194 rx=129 ore=0 drop=0 cmds=13 damper=OPEN lock_s=0 lum=72
+[MPU6050] Температура: 27.07 °C
+LOAD pct=22%
+TICK t=80194 rx=131 ore=0 drop=0 cmds=13 damper=OPEN lock_s=0 lum=71
+[MPU6050] Температура: 27.16 °C
+LOAD pct=15%
+CMD [QFLOOD 32]
+QFLOOD sent=32 queued=8 dropped=24 queue_len=8
+OK
+TICK t=81194 rx=132 ore=0 drop=0 cmds=14 damper=OPEN lock_s=0 lum=71
+[MPU6050] Температура: 27.07 °C
+LOAD pct=20%
+TICK t=82194 rx=132 ore=0 drop=0 cmds=14 damper=OPEN lock_s=0 lum=71
+[MPU6050] Температура: 27.11 °C
+LOAD pct=22%
+TICK t=83194 rx=132 ore=0 drop=0 cmds=14 damper=OPEN lock_s=0 lum=70
+[MPU6050] Температура: 27.02 °C
+LOAD pct=22%
+TICK t=84194 rx=132 ore=0 drop=0 cmds=14 damper=OPEN lock_s=0 lum=68
+[MPU6050] Температура: 27.21 °C
+LOAD pct=14%
+TICK t=85194 rx=134 ore=0 drop=0 cmds=14 damper=OPEN lock_s=0 lum=67
+[MPU6050] Температура: 27.16 °C
+LOAD pct=20%
+TICK t=86194 rx=137 ore=0 drop=0 cmds=14 damper=OPEN lock_s=0 lum=66
+[MPU6050] Температура: 27.07 °C
+LOAD pct=22%
+CMD [JSTAT]
+JOURNAL written=1 failed=0 test=8 btn_ignored=0
+OK
+TICK t=87194 rx=138 ore=0 drop=0 cmds=15 damper=OPEN lock_s=0 lum=67
+[MPU6050] Температура: 27.02 °C
+LOAD pct=23%
+TICK t=88194 rx=138 ore=0 drop=0 cmds=15 damper=OPEN lock_s=0 lum=66
+[MPU6050] Температура: 27.02 °C
+LOAD pct=12%
+TICK t=89194 rx=138 ore=0 drop=0 cmds=15 damper=OPEN lock_s=0 lum=65
+[MPU6050] Температура: 27.11 °C
+LOAD pct=21%
+TICK t=90194 rx=138 ore=0 drop=0 cmds=15 damper=OPEN lock_s=0 lum=66
+[MPU6050] Температура: 27.07 °C
+LOAD pct=22%
+TICK t=91194 rx=138 ore=0 drop=0 cmds=15 damper=OPEN lock_s=0 lum=65
+[MPU6050] Температура: 27.16 °C
+LOAD pct=22%
+TICK t=92194 rx=143 ore=0 drop=0 cmds=15 damper=OPEN lock_s=0 lum=66
+[MPU6050] Температура: 27.11 °C
+LOAD pct=12%
+CMD [TASKS]
+TASKS runtime (name abs_cycles pct)
+cmd        	5132864		<1%
+IDLE       	1748940089		73%
+Tmr Svc    	8790806		<1%
+temp       	3906180		<1%
+tick       	89991814		1%
+camera     	1576001811		19%
+btn        	737		<1%
+hog        	709		<1%
+frame      	740		<1%
+csw        	436579192		5%
+inv_med    	83968213		1%
+inv_hi     	4553306		<1%
+inv_lo     	16819224		<1%
+journal    	42275		<1%
+TASKS list (name state prio free_words num)
+cmd        	X	3	536	4
+Tmr Svc    	R	2	211	14
+IDLE       	R	0	117	13
+temp       	B	4	176	2
+tick       	B	3	165	3
+camera     	B	2	273	5
+btn        	B	6	229	1
+hog        	B	5	167	9
+frame      	B	1	423	7
+csw        	B	7	167	8
+inv_med    	B	4	167	11
+inv_hi     	B	5	74	10
+inv_lo     	B	1	157	12
+journal    	B	2	390	6
+OK
+TICK t=93195 rx=144 ore=0 drop=0 cmds=16 damper=OPEN lock_s=0 lum=65
+[MPU6050] Температура: 27.16 °C
+LOAD pct=30%
+TICK t=94195 rx=144 ore=0 drop=0 cmds=16 damper=OPEN lock_s=0 lum=66
+[MPU6050] Температура: 27.11 °C
+LOAD pct=22%
+TICK t=95195 rx=144 ore=0 drop=0 cmds=16 damper=OPEN lock_s=0 lum=65
+[MPU6050] Температура: 27.07 °C
+LOAD pct=22%
+TICK t=96195 rx=144 ore=0 drop=0 cmds=16 damper=OPEN lock_s=0 lum=65
+[MPU6050] Температура: 27.07 °C
+LOAD pct=12%
+TICK t=97196 rx=144 ore=0 drop=0 cmds=16 damper=OPEN lock_s=0 lum=65
+[MPU6050] Температура: 27.11 °C
+LOAD pct=22%
+TICK t=98195 rx=144 ore=0 drop=0 cmds=16 damper=OPEN lock_s=0 lum=64
+[MPU6050] Температура: 27.07 °C
+LOAD pct=22%
+TICK t=99195 rx=146 ore=0 drop=0 cmds=16 damper=OPEN lock_s=0 lum=65
+[MPU6050] Температура: 27.11 °C
+LOAD pct=22%
+TICK t=100195 rx=149 ore=0 drop=0 cmds=16 damper=OPEN lock_s=0 lum=64
+[MPU6050] Температура: 27.11 °C
+LOAD pct=12%
+TICK t=101196 rx=151 ore=0 drop=0 cmds=16 damper=OPEN lock_s=0 lum=65
+[MPU6050] Температура: 27.11 °C
+LOAD pct=22%
+TICK t=102195 rx=154 ore=0 drop=0 cmds=16 damper=OPEN lock_s=0 lum=64
+[MPU6050] Температура: 27.11 °C
+LOAD pct=22%
+TICK t=103195 rx=155 ore=0 drop=0 cmds=16 damper=OPEN lock_s=0 lum=66
+[MPU6050] Температура: 27.07 °C
+LOAD pct=22%
+TICK t=104195 rx=155 ore=0 drop=0 cmds=16 damper=OPEN lock_s=0 lum=66
+[MPU6050] Температура: 27.07 °C
+LOAD pct=12%
+CMD [STARVE 3000]
+STARVE done busy_ms=3000
+TICK t=108065 rx=156 ore=0 drop=0 cmds=17 damper=OPEN lock_s=0 lum=65
+[MPU6050] Температура: 27.07 °C
+LOAD pct=83%
+OK
+TICK t=108078 rx=156 ore=0 drop=0 cmds=17 damper=OPEN lock_s=0 lum=65
+[MPU6050] Температура: 27.07 °C
+LOAD pct=100%
+TICK t=108091 rx=156 ore=0 drop=0 cmds=17 damper=OPEN lock_s=0 lum=65
+[MPU6050] Температура: 27.07 °C
+LOAD pct=100%
+TICK t=108196 rx=156 ore=0 drop=0 cmds=17 damper=OPEN lock_s=0 lum=65
+[MPU6050] Температура: 27.07 °C
+LOAD pct=100%
+TICK t=109196 rx=156 ore=0 drop=0 cmds=17 damper=OPEN lock_s=0 lum=65
+[MPU6050] Температура: 27.02 °C
+LOAD pct=44%
+TICK t=110196 rx=159 ore=0 drop=0 cmds=17 damper=OPEN lock_s=0 lum=65
+[MPU6050] Температура: 27.07 °C
+LOAD pct=16%
+TICK t=111196 rx=161 ore=0 drop=0 cmds=17 damper=OPEN lock_s=0 lum=65
+[MPU6050] Температура: 27.11 °C
+LOAD pct=17%
+CMD [TASKS]
+TASKS runtime (name abs_cycles pct)
+cmd        	11893497		<1%
+IDLE       	2851819783		71%
+Tmr Svc    	10392840		<1%
+camera     	1850540980		18%
+temp       	4707126		<1%
+tick       	109985213		1%
+btn        	737		<1%
+frame      	740		<1%
+csw        	436579192		4%
+inv_med    	83968213		<1%
+inv_hi     	4553306		<1%
+inv_lo     	16819224		<1%
+journal    	42275		<1%
+hog        	252211356		2%
+TASKS list (name state prio free_words num)
+cmd        	X	3	536	4
+Tmr Svc    	R	2	211	14
+camera     	R	2	273	5
+IDLE       	R	0	117	13
+temp       	B	4	176	2
+tick       	B	3	162	3
+btn        	B	6	229	1
+frame      	B	1	423	7
+csw        	B	7	167	8
+inv_med    	B	4	167	11
+inv_hi     	B	5	74	10
+inv_lo     	B	1	157	12
+journal    	B	2	390	6
+hog        	B	5	78	9
+OK
+TICK t=112196 rx=162 ore=0 drop=0 cmds=18 damper=OPEN lock_s=0 lum=65
+[MPU6050] Температура: 27.11 °C
+LOAD pct=26%
+TICK t=113196 rx=163 ore=0 drop=0 cmds=18 damper=OPEN lock_s=0 lum=65
+[MPU6050] Температура: 27.11 °C
+LOAD pct=22%
+TICK t=114196 rx=167 ore=0 drop=0 cmds=18 damper=OPEN lock_s=0 lum=65
+[MPU6050] Температура: 27.07 °C
+LOAD pct=15%
+TICK t=115196 rx=167 ore=0 drop=0 cmds=18 damper=OPEN lock_s=0 lum=65
+[MPU6050] Температура: 27.11 °C
+LOAD pct=19%
+TICK t=116196 rx=171 ore=0 drop=0 cmds=18 damper=OPEN lock_s=0 lum=65
+[MPU6050] Температура: 27.11 °C
+LOAD pct=22%
+CMD [TRACE 128]
+TRC t_us=19929484 dt_us=0 task=IDLE
+TRC t_us=19943550 dt_us=14066 task=Tmr Svc
+TRC t_us=19943574 dt_us=24 task=IDLE
+TRC t_us=19963550 dt_us=19975 task=Tmr Svc
+TRC t_us=19963575 dt_us=24 task=IDLE
+TRC t_us=19983550 dt_us=19975 task=Tmr Svc
+TRC t_us=19983575 dt_us=24 task=IDLE
+TRC t_us=20003550 dt_us=19975 task=Tmr Svc
+TRC t_us=20003575 dt_us=24 task=IDLE
+TRC t_us=20023550 dt_us=19975 task=Tmr Svc
+TRC t_us=20023575 dt_us=24 task=IDLE
+TRC t_us=20043550 dt_us=19975 task=Tmr Svc
+TRC t_us=20043575 dt_us=24 task=IDLE
+TRC t_us=20063550 dt_us=19975 task=Tmr Svc
+TRC t_us=20063575 dt_us=24 task=IDLE
+TRC t_us=20083550 dt_us=19975 task=Tmr Svc
+TRC t_us=20083575 dt_us=24 task=IDLE
+TRC t_us=20103550 dt_us=19975 task=Tmr Svc
+TRC t_us=20103575 dt_us=24 task=IDLE
+TRC t_us=20123550 dt_us=19975 task=Tmr Svc
+TRC t_us=20123575 dt_us=24 task=IDLE
+TRC t_us=20143550 dt_us=19975 task=Tmr Svc
+TRC t_us=20143575 dt_us=24 task=IDLE
+TRC t_us=20163550 dt_us=19975 task=Tmr Svc
+TRC t_us=20163575 dt_us=24 task=IDLE
+TRC t_us=20172546 dt_us=8971 task=cmd
+TRC t_us=20172559 dt_us=13 task=IDLE
+TRC t_us=20183550 dt_us=10990 task=Tmr Svc
+TRC t_us=20183574 dt_us=24 task=IDLE
+TRC t_us=20203550 dt_us=19975 task=Tmr Svc
+TRC t_us=20203575 dt_us=24 task=IDLE
+TRC t_us=20223550 dt_us=19975 task=Tmr Svc
+TRC t_us=20223575 dt_us=24 task=IDLE
+TRC t_us=20235550 dt_us=11975 task=camera
+TRC t_us=20243550 dt_us=8000 task=Tmr Svc
+TRC t_us=20243575 dt_us=24 task=camera
+TRC t_us=20263550 dt_us=19975 task=Tmr Svc
+TRC t_us=20263574 dt_us=24 task=camera
+TRC t_us=20283550 dt_us=19975 task=Tmr Svc
+TRC t_us=20283574 dt_us=24 task=camera
+TRC t_us=20303550 dt_us=19975 task=Tmr Svc
+TRC t_us=20303574 dt_us=24 task=camera
+TRC t_us=20345169 dt_us=41594 task=IDLE
+TRC t_us=20359550 dt_us=14380 task=Tmr Svc
+TRC t_us=20359574 dt_us=24 task=IDLE
+TRC t_us=20379550 dt_us=19975 task=Tmr Svc
+TRC t_us=20379574 dt_us=24 task=IDLE
+TRC t_us=20399550 dt_us=19975 task=Tmr Svc
+TRC t_us=20399574 dt_us=24 task=IDLE
+TRC t_us=20419550 dt_us=19975 task=Tmr Svc
+TRC t_us=20419574 dt_us=24 task=IDLE
+TRC t_us=20439550 dt_us=19975 task=Tmr Svc
+TRC t_us=20439574 dt_us=24 task=IDLE
+TRC t_us=20448131 dt_us=8556 task=cmd
+TRC t_us=20448142 dt_us=11 task=IDLE
+TRC t_us=20459550 dt_us=11408 task=Tmr Svc
+TRC t_us=20459574 dt_us=24 task=IDLE
+TRC t_us=20479550 dt_us=19975 task=Tmr Svc
+TRC t_us=20479574 dt_us=24 task=IDLE
+TRC t_us=20499550 dt_us=19975 task=Tmr Svc
+TRC t_us=20499574 dt_us=24 task=IDLE
+TRC t_us=20519550 dt_us=19975 task=Tmr Svc
+TRC t_us=20519574 dt_us=24 task=IDLE
+TRC t_us=20539550 dt_us=19975 task=Tmr Svc
+TRC t_us=20539574 dt_us=24 task=IDLE
+TRC t_us=20559550 dt_us=19975 task=Tmr Svc
+TRC t_us=20559575 dt_us=24 task=IDLE
+TRC t_us=20579552 dt_us=19977 task=temp
+TRC t_us=20580055 dt_us=502 task=tick
+TRC t_us=20592606 dt_us=12551 task=Tmr Svc
+TRC t_us=20592630 dt_us=24 task=IDLE
+TRC t_us=20599550 dt_us=6920 task=Tmr Svc
+TRC t_us=20599575 dt_us=24 task=IDLE
+TRC t_us=20619550 dt_us=19975 task=Tmr Svc
+TRC t_us=20619575 dt_us=24 task=IDLE
+TRC t_us=20639550 dt_us=19975 task=Tmr Svc
+TRC t_us=20639575 dt_us=24 task=IDLE
+TRC t_us=20659550 dt_us=19975 task=Tmr Svc
+TRC t_us=20659575 dt_us=24 task=IDLE
+TRC t_us=20679550 dt_us=19975 task=Tmr Svc
+TRC t_us=20679575 dt_us=24 task=IDLE
+TRC t_us=20699550 dt_us=19975 task=Tmr Svc
+TRC t_us=20699575 dt_us=24 task=IDLE
+TRC t_us=20719550 dt_us=19975 task=Tmr Svc
+TRC t_us=20719575 dt_us=24 task=IDLE
+TRC t_us=20739550 dt_us=19975 task=Tmr Svc
+TRC t_us=20739575 dt_us=24 task=IDLE
+TRC t_us=20759550 dt_us=19975 task=Tmr Svc
+TRC t_us=20759575 dt_us=24 task=IDLE
+TRC t_us=20779550 dt_us=19975 task=Tmr Svc
+TRC t_us=20779575 dt_us=24 task=IDLE
+TRC t_us=20799550 dt_us=19975 task=Tmr Svc
+TRC t_us=20799575 dt_us=24 task=IDLE
+TRC t_us=20819550 dt_us=19975 task=Tmr Svc
+TRC t_us=20819575 dt_us=24 task=IDLE
+TRC t_us=20839550 dt_us=19975 task=Tmr Svc
+TRC t_us=20839575 dt_us=24 task=IDLE
+TRC t_us=20844550 dt_us=4975 task=camera
+TRC t_us=20859550 dt_us=15000 task=Tmr Svc
+TRC t_us=20859575 dt_us=24 task=camera
+TRC t_us=20879550 dt_us=19975 task=Tmr Svc
+TRC t_us=20879574 dt_us=24 task=camera
+TRC t_us=20899550 dt_us=19975 task=Tmr Svc
+TRC t_us=20899574 dt_us=24 task=camera
+TRC t_us=20954449 dt_us=54874 task=IDLE
+TRC t_us=20955550 dt_us=1101 task=Tmr Svc
+TRC t_us=20955574 dt_us=24 task=IDLE
+TRC t_us=20975550 dt_us=19975 task=Tmr Svc
+TRC t_us=20975575 dt_us=24 task=IDLE
+TRC t_us=20995550 dt_us=19975 task=Tmr Svc
+TRC t_us=20995575 dt_us=24 task=IDLE
+TRC t_us=21015550 dt_us=19975 task=Tmr Svc
+TRC t_us=21015575 dt_us=24 task=IDLE
+TRC t_us=21035550 dt_us=19975 task=Tmr Svc
+TRC t_us=21035575 dt_us=24 task=IDLE
+TRC t_us=21055550 dt_us=19975 task=Tmr Svc
+TRC t_us=21055575 dt_us=24 task=IDLE
+TRC t_us=21075550 dt_us=19975 task=Tmr Svc
+TRC t_us=21075575 dt_us=24 task=IDLE
+TRC t_us=21095550 dt_us=19975 task=Tmr Svc
+TRC t_us=21095575 dt_us=24 task=IDLE
+TRC t_us=21115550 dt_us=19975 task=Tmr Svc
+TRC t_us=21115575 dt_us=24 task=IDLE
+TRC t_us=21135550 dt_us=19975 task=Tmr Svc
+TRC t_us=21135575 dt_us=24 task=IDLE
+TRC t_us=21155550 dt_us=19975 task=Tmr Svc
+TRC t_us=21155575 dt_us=24 task=IDLE
+TRC t_us=21173233 dt_us=17658 task=cmd
+OK
+TICK t=117260 rx=172 ore=0 drop=0 cmds=19 damper=OPEN lock_s=0 lum=66
+[MPU6050] Температура: 27.07 °C
+LOAD pct=58%
+TICK t=118196 rx=172 ore=0 drop=0 cmds=19 damper=OPEN lock_s=0 lum=66
+[MPU6050] Температура: 27.07 °C
+LOAD pct=51%
+TICK t=119196 rx=172 ore=0 drop=0 cmds=19 damper=OPEN lock_s=0 lum=65
+[MPU6050] Температура: 27.07 °C
+LOAD pct=22%
+TICK t=120196 rx=172 ore=0 drop=0 cmds=19 damper=OPEN lock_s=0 lum=66
+[MPU6050] Температура: 27.16 °C
+LOAD pct=22%
+TICK t=121196 rx=172 ore=0 drop=0 cmds=19 damper=OPEN lock_s=0 lum=65
+[MPU6050] Температура: 27.11 °C
+LOAD pct=22%
+TICK t=122197 rx=172 ore=0 drop=0 cmds=19 damper=OPEN lock_s=0 lum=65
+[MPU6050] Температура: 27.07 °C
+LOAD pct=12%
+TICK t=123197 rx=172 ore=0 drop=0 cmds=19 damper=OPEN lock_s=0 lum=65
+[MPU6050] Температура: 27.16 °C
+LOAD pct=22%
+
+Terminating...
+Thanks for using picocom
